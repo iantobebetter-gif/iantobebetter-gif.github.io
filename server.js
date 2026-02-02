@@ -207,15 +207,9 @@ app.post('/api/signin', async (req, res) => {
       const step2 = step1.filter(c => c.total === minTotal);
       targetTableIndex = getRandomItem(step2).index;
       
-      // Find all empty seats starting from index 1 (Seat 2)
+      // Find first empty seat starting from index 1 (Seat 2)
       const t = tables[targetTableIndex];
-      const availableSeatIndices = t.seats
-        .map((used, idx) => ({ used, idx }))
-        .filter(item => !item.used && item.idx > 0)
-        .map(item => item.idx);
-      
-      if (availableSeatIndices.length === 0) return res.status(500).json({ error: 'Logic Error: No valid seats' });
-      targetSeatIndex = getRandomItem(availableSeatIndices);
+      targetSeatIndex = t.seats.findIndex((used, idx) => !used && idx > 0);
     }
 
     const targetTable = tables[targetTableIndex];
