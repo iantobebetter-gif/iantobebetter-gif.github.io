@@ -177,22 +177,45 @@ app.post('/api/signin', async (req, res) => {
     
     if (seatIndex === -1) return res.status(500).json({ error: 'Logic Error: Table full but selected' });
 
-    // Generate Lucky Lottery Number (No '4', favor '6','8')
-    const generateLuckyNumber = () => {
-      const luckyDigits = [0, 1, 2, 3, 5, 6, 7, 8, 9];
-      const firstDigits = [1, 2, 3, 5, 6, 7, 8, 9];
-      let numStr = '';
-      
-      // 1st digit
-      numStr += firstDigits[Math.floor(Math.random() * firstDigits.length)];
-      // 2nd-4th digit
-      for(let i=0; i<3; i++) {
-        numStr += luckyDigits[Math.floor(Math.random() * luckyDigits.length)];
-      }
-      return numStr;
-    };
+    // Predefined Lucky Numbers Pool (Enumerated as requested)
+    // Focus on 6, 8, and auspicious combinations like 168, 518, etc.
+    const luckyPool = [
+      "168", "188", "158", "198", "166", "186",
+      "268", "288", "258", "298", "266", "286",
+      "368", "388", "358", "398", "366", "386",
+      "518", "568", "588", "598", "566", "586",
+      "618", "666", "668", "688", "698", "658",
+      "718", "768", "788", "798", "766", "786",
+      "818", "868", "888", "898", "858", "866",
+      "918", "968", "988", "998", "966", "986",
+      "1688", "1888", "5188", "6666", "8888", "9999",
+      "1168", "1188", "6688", "8866", "1368", "1388"
+    ];
 
-    const lotteryNum = generateLuckyNumber();
+    // Get already assigned numbers
+    const [usedRows] = await pool.query('SELECT lottery_number FROM users WHERE lottery_number IS NOT NULL');
+    const usedNumbers = new Set(usedRows.map(r => r.lottery_number));
+
+    // Filter available
+    let available = luckyPool.filter(n => !usedNumbers.has(n));
+
+    // Fallback if pool is empty (generate random lucky number)
+    if (available.length === 0) {
+        const generateLuckyNumber = () => {
+          const luckyDigits = [0, 6, 8, 9];
+          const firstDigits = [1, 6, 8];
+          let numStr = '' + firstDigits[Math.floor(Math.random() * firstDigits.length)];
+          for(let i=0; i<2; i++) numStr += luckyDigits[Math.floor(Math.random() * luckyDigits.length)];
+          return numStr;
+        };
+        let newNum = generateLuckyNumber();
+        while(usedNumbers.has(newNum)) {
+           newNum = generateLuckyNumber();
+        }
+        available = [newNum];
+    }
+
+    const lotteryNum = getRandomItem(available);
     const label = getRandomItem(fourBless);
 
     // Update DB

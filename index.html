@@ -5,7 +5,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>聚餐圆桌座位抽签</title>
+    <title>研发二四五团年夜饭·鸿运圆桌抽签</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -279,19 +279,16 @@
         class="mx-auto max-w-6xl rounded-2xl bg-red-900/40 backdrop-blur card-border px-6 py-4 flex items-center justify-between"
       >
         <h1
-          class="text-2xl md:text-3xl font-bold tracking-wide text-[#FFDF40]"
+          id="mainTitle"
+          class="text-1xl md:text-3xl font-bold tracking-wide text-[#FFDF40] cursor-pointer select-none"
           style="animation: glow 2.5s ease-in-out infinite; margin: 0 auto"
         >
-          聚餐圆桌座位抽签
+         研发二四五团："圆"聚新春·"抽"中鸿运
         </h1>
 
-        <div class="flex items-center gap-3">
-          <button
-            id="endGameBtn"
-            class="hidden cursor-pointer px-4 py-2 rounded-lg border border-red-300 text-red-100 hover:bg-red-500/20 transition-colors duration-200"
-          >
-            终止此次游戏
-          </button>
+        <!-- Hidden Reset Button -->
+        <div class="hidden">
+          <button id="endGameBtn"></button>
         </div>
       </div>
     </header>
@@ -565,10 +562,10 @@
 
     <div
       id="overlay"
-      class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center"
+      class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
     >
       <div
-        class="relative w-[95%] max-w-2xl rounded-3xl bg-[#fff7ed] border-[12px] border-[#b45309] p-12 text-center shadow-[0_0_100px_rgba(251,191,36,0.6)] transform scale-100 transition-transform duration-300"
+        class="relative w-full max-w-[90vw] lg:max-w-2xl rounded-3xl bg-[#fff7ed] border-4 lg:border-[12px] border-[#b45309] p-6 lg:p-12 text-center shadow-[0_0_100px_rgba(251,191,36,0.6)] transform scale-100 transition-transform duration-300 overflow-y-auto max-h-[90vh]"
       >
         <!-- 卷轴装饰 -->
 
@@ -595,29 +592,29 @@
 
         <div class="relative z-10">
           <div
-            class="mx-auto w-40 h-40 rounded-full border-8 border-[#fbbf24] flex items-center justify-center bg-[#dc2626] animate-[spinFast_3s_linear_infinite] shadow-xl mb-8"
+            class="mx-auto w-24 h-24 lg:w-40 lg:h-40 rounded-full border-4 lg:border-8 border-[#fbbf24] flex items-center justify-center bg-[#dc2626] animate-[spinFast_3s_linear_infinite] shadow-xl mb-4 lg:mb-8"
           >
-            <span class="text-6xl filter drop-shadow-lg">🧧</span>
+            <span class="text-4xl lg:text-6xl filter drop-shadow-lg">🧧</span>
           </div>
 
           <h3
             id="overlayTitle"
-            class="text-5xl font-black text-[#b45309] mb-6 tracking-wide"
-            style="text-shadow: 2px 2px 0px rgba(251, 191, 36, 0.5)"
+            class="text-2xl lg:text-5xl font-black text-[#b45309] mb-4 lg:mb-6 tracking-wide whitespace-normal lg:whitespace-nowrap"
+            style="text-shadow: 1px 1px 0px rgba(251, 191, 36, 0.5)"
           ></h3>
 
           <div
-            class="bg-[#fff1f2] border-2 border-[#fecaca] rounded-2xl p-6 mb-8"
+            class="bg-[#fff1f2] border-2 border-[#fecaca] rounded-xl lg:rounded-2xl p-4 lg:p-6 mb-6 lg:mb-8"
           >
             <p
               id="overlaySub"
-              class="text-3xl text-[#991b1b] font-bold leading-relaxed"
+              class="text-lg lg:text-3xl text-[#991b1b] font-bold leading-relaxed whitespace-pre-wrap"
             ></p>
           </div>
 
           <button
             id="overlayClose"
-            class="cursor-pointer px-12 py-4 rounded-full bg-gradient-to-r from-[#d97706] to-[#b45309] hover:from-[#fbbf24] hover:to-[#d97706] text-white font-black text-2xl shadow-[0_6px_0_#78350f] active:shadow-none active:translate-y-1 transition-all"
+            class="cursor-pointer px-8 py-3 lg:px-12 lg:py-4 rounded-full bg-gradient-to-r from-[#d97706] to-[#b45309] hover:from-[#fbbf24] hover:to-[#d97706] text-white font-black text-lg lg:text-2xl shadow-[0_4px_0_#78350f] lg:shadow-[0_6px_0_#78350f] active:shadow-none active:translate-y-1 transition-all w-full lg:w-auto"
           >
             ✨ 纳福归位 ✨
           </button>
@@ -738,16 +735,35 @@
       let rosterData = { leaders: [], groups: {} };
       let currentRosterTab = "all"; 
       let isLayoutVisible = false;
+      let titleClickCount = 0;
+      let titleClickTimer = null;
 
       // Init
       document.addEventListener("DOMContentLoaded", async () => {
         // Hide setup form, show main interface directly (assuming backend handles config)
         document.getElementById("setupSection").classList.add("hidden");
         document.getElementById("drawSection").classList.remove("hidden");
-        document.getElementById("endGameBtn").classList.remove("hidden");
+        // document.getElementById("endGameBtn").classList.remove("hidden"); // Removed
         
         await refreshData();
         await fetchRoster();
+
+        // Secret Backdoor: Click title 5 times in 2 seconds
+        document.getElementById("mainTitle").addEventListener("click", () => {
+          titleClickCount++;
+          if(titleClickTimer) clearTimeout(titleClickTimer);
+          
+          titleClickTimer = setTimeout(() => {
+            titleClickCount = 0;
+          }, 2000);
+
+          if(titleClickCount >= 5) {
+             titleClickCount = 0;
+             if(confirm("⚠️ 管理员模式：确定要清空所有数据并重置系统吗？")) {
+                fetch(`${API_URL}/reset`, { method: "POST" }).then(() => location.reload());
+             }
+          }
+        });
       });
 
       async function refreshData() {
@@ -907,7 +923,7 @@
              else if (gName.includes("五")) tabKey = "group5";
              
              if (shouldShow(tabKey)) {
-                list.appendChild(createTreeItem(`🐴 ${gName}`, rosterData.groups[gName].length, rosterData.groups[gName]));
+                list.appendChild(createTreeItem(`⭐️ ${gName}`, rosterData.groups[gName].length, rosterData.groups[gName]));
              }
           });
         }
