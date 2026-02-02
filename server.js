@@ -157,25 +157,63 @@ app.post('/api/signin', async (req, res) => {
     if (candidates.length === 0) return res.status(400).json({ error: '所有座位已满' });
 
     let targetTableIndex = -1;
+    let targetSeatIndex = -1;
     
     if (user.role === 'leader') {
-      const minLeaders = Math.min(...candidates.map(c => c.leaders));
-      const step1 = candidates.filter(c => c.leaders === minLeaders);
-      const minTotal = Math.min(...step1.map(c => c.total));
-      const step2 = step1.filter(c => c.total === minTotal);
-      targetTableIndex = getRandomItem(step2).index;
+      // Leader Rule: Must be Seat #1
+      // Leader Rule: Wang Zong -> Table 1
+      
+      if (user.name === '王总') {
+         const t1 = tables.find(t => t.id === 1);
+         if (!t1) return res.status(500).json({ error: 'Table 1 not found' });
+         if (t1.seats[0]) return res.status(400).json({ error: '一号桌主位已被占用' });
+         targetTableIndex = t1.index;
+         targetSeatIndex = 0;
+      } else {
+         // Other Leaders: Find any table where Seat #1 is empty
+         // and prefer tables with no leader yet
+         const availableTables = tables.filter(t => !t.seats[0] && t.id !== 1); // Exclude Table 1 for normal leaders (reserved for Wang)
+         
+         if (availableTables.length === 0) {
+            // Fallback: check if Table 1 is free (unlikely if reserved)
+            if (!tables[0].seats[0]) {
+               targetTableIndex = 0; 
+               targetSeatIndex = 0;
+            } else {
+               return res.status(400).json({ error: '没有空余的主位（1号座）可分配' });
+            }
+         } else {
+            const chosen = getRandomItem(availableTables);
+            targetTableIndex = chosen.index;
+            targetSeatIndex = 0;
+         }
+      }
     } else {
-      const minEmps = Math.min(...candidates.map(c => c.employees));
-      const step1 = candidates.filter(c => c.employees === minEmps);
+      // Employees: Avoid Seat #1
+      const validTables = candidates.filter(t => {
+         // Check if table has empty seats other than seat #1
+         const hasFreeNormalSeat = t.seats.slice(1).some(s => !s);
+         return hasFreeNormalSeat;
+      });
+      
+      if (validTables.length === 0) return res.status(400).json({ error: '员工座位已满' });
+
+      const minEmps = Math.min(...validTables.map(c => c.employees));
+      const step1 = validTables.filter(c => c.employees === minEmps);
       const minTotal = Math.min(...step1.map(c => c.total));
       const step2 = step1.filter(c => c.total === minTotal);
       targetTableIndex = getRandomItem(step2).index;
+      
+      // Find first empty seat starting from index 1 (Seat 2)
+      const t = tables[targetTableIndex];
+      targetSeatIndex = t.seats.findIndex((used, idx) => !used && idx > 0);
     }
 
     const targetTable = tables[targetTableIndex];
-    const seatIndex = targetTable.seats.findIndex(s => !s); // find first empty
+    // const seatIndex = targetTable.seats.findIndex(s => !s); // Removed old logic
+    const seatIndex = targetSeatIndex;
     
-    if (seatIndex === -1) return res.status(500).json({ error: 'Logic Error: Table full but selected' });
+    if (seatIndex === -1) return res.status(500).json({ error: 'Logic Error: Seat allocation failed' });
 
     // Predefined Lucky Numbers Pool (Enumerated as requested)
     // Focus on 6, 8, and auspicious combinations like 168, 518, etc.
