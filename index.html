@@ -445,17 +445,57 @@
           <!-- 左侧：待签到墙 -->
 
           <div
-            class="order-2 lg:order-1 lg:col-span-3 rounded-2xl card-border p-0 overflow-hidden flex flex-col h-96 lg:h-[calc(100vh-160px)]"
+            class="order-2 lg:order-1 lg:col-span-3 rounded-2xl card-border p-0 overflow-hidden flex flex-col h-[50vh] lg:h-[calc(100vh-160px)]"
           >
             <div
-              class="bg-red-800/80 p-4 text-center border-b-2 border-gold-500/30"
+              class="bg-red-800/80 p-2 lg:p-4 text-center border-b-2 border-gold-500/30 flex justify-between items-center"
             >
-              <h3 class="text-xl font-black text-gold-300">📜 待签到名单</h3>
+              <h3 class="text-lg lg:text-xl font-black text-gold-300">
+                📜 待签到名单
+              </h3>
+              <!-- 移动端分组 Tab -->
+              <div class="flex gap-1 lg:hidden text-xs">
+                <button
+                  onclick="switchRosterTab('all')"
+                  id="rtab-all"
+                  class="px-2 py-1 rounded bg-gold-500 text-red-900 font-bold"
+                >
+                  全部
+                </button>
+                <button
+                  onclick="switchRosterTab('leader')"
+                  id="rtab-leader"
+                  class="px-2 py-1 rounded bg-red-900/50 text-gold-400"
+                >
+                  领导
+                </button>
+                <button
+                  onclick="switchRosterTab('group2')"
+                  id="rtab-group2"
+                  class="px-2 py-1 rounded bg-red-900/50 text-gold-400"
+                >
+                  二团
+                </button>
+                <button
+                  onclick="switchRosterTab('group4')"
+                  id="rtab-group4"
+                  class="px-2 py-1 rounded bg-red-900/50 text-gold-400"
+                >
+                  四团
+                </button>
+                <button
+                  onclick="switchRosterTab('group5')"
+                  id="rtab-group5"
+                  class="px-2 py-1 rounded bg-red-900/50 text-gold-400"
+                >
+                  五团
+                </button>
+              </div>
             </div>
 
             <div
               id="rosterList"
-              class="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-6"
+              class="p-2 lg:p-4 overflow-y-auto custom-scrollbar flex-1 space-y-4 lg:space-y-6"
             >
               <!-- 动态生成 -->
             </div>
@@ -497,12 +537,20 @@
                 </div>
 
                 <div
-                  class="bg-black/20 px-4 py-2 rounded-lg border border-gold-500/30"
+                  class="bg-black/20 px-4 py-2 rounded-lg border border-gold-500/30 flex items-center gap-2"
                 >
                   <span
                     id="remainingLabel"
                     class="text-gold-200 font-bold text-lg"
                   ></span>
+                  <!-- 移动端切换圆桌视图按钮 -->
+                  <button
+                    id="toggleLayoutBtn"
+                    class="lg:hidden px-3 py-1 bg-red-700 text-gold-100 rounded border border-gold-500/30 text-sm font-bold"
+                    onclick="toggleLayoutView()"
+                  >
+                    查看圆桌
+                  </button>
                 </div>
               </div>
 
@@ -527,7 +575,7 @@
 
             <div
               id="layout"
-              class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 lg:overflow-y-auto pr-2 custom-scrollbar lg:flex-1 pb-8"
+              class="hidden lg:grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 lg:overflow-y-auto pr-2 custom-scrollbar lg:flex-1 pb-8"
             ></div>
           </div>
         </div>
@@ -874,6 +922,44 @@
         return { ok: true, tableIndex, label };
       }
 
+      let currentRosterTab = "all"; // 'all', 'leader', 'group2', 'group4', 'group5'
+      let isLayoutVisible = false; // Mobile layout visibility
+
+      function switchRosterTab(tab) {
+        currentRosterTab = tab;
+        // Update tab styles
+        ["all", "leader", "group2", "group4", "group5"].forEach((t) => {
+          const btn = document.getElementById(`rtab-${t}`);
+          if (t === tab) {
+            btn.className =
+              "px-2 py-1 rounded bg-gold-500 text-red-900 font-bold";
+          } else {
+            btn.className = "px-2 py-1 rounded bg-red-900/50 text-gold-400";
+          }
+        });
+        renderRoster();
+      }
+
+      function toggleLayoutView() {
+        isLayoutVisible = !isLayoutVisible;
+        const layout = document.getElementById("layout");
+        const btn = document.getElementById("toggleLayoutBtn");
+
+        if (isLayoutVisible) {
+          layout.classList.remove("hidden");
+          btn.textContent = "隐藏圆桌";
+          btn.classList.add("bg-gold-600", "text-red-900");
+          btn.classList.remove("bg-red-700", "text-gold-100");
+          // Scroll to layout
+          layout.scrollIntoView({ behavior: "smooth" });
+        } else {
+          layout.classList.add("hidden");
+          btn.textContent = "查看圆桌";
+          btn.classList.remove("bg-gold-600", "text-red-900");
+          btn.classList.add("bg-red-700", "text-gold-100");
+        }
+      }
+
       function renderRoster() {
         const list = document.getElementById("rosterList");
         list.innerHTML = "";
@@ -881,22 +967,22 @@
         const createSection = (title, items, role) => {
           if (items.length === 0) return;
           const section = document.createElement("div");
-          section.className = "mb-6";
+          section.className = "mb-4 lg:mb-6";
 
           const h = document.createElement("h4");
           h.className =
-            "text-lg font-black text-gold-300 mb-3 sticky top-0 bg-red-800/95 py-2 px-2 shadow-sm border-l-4 border-gold-500";
+            "text-base lg:text-lg font-black text-gold-300 mb-2 sticky top-0 bg-red-800/95 py-1 lg:py-2 px-2 shadow-sm border-l-4 border-gold-500";
           h.textContent = title + ` (${items.length})`;
           section.appendChild(h);
 
           const grid = document.createElement("div");
-          grid.className = "grid grid-cols-2 gap-3";
+          grid.className = "grid grid-cols-3 lg:grid-cols-2 gap-2 lg:gap-3"; // Mobile 3 cols, PC 2 cols
           items.forEach((item) => {
             const name = typeof item === "string" ? item : item.name;
             const group = typeof item === "string" ? "" : item.group;
 
             const btn = document.createElement("button");
-            btn.className = `relative overflow-hidden text-left px-4 py-3 rounded-lg border-2 transition-all text-sm font-bold shadow-sm group 
+            btn.className = `relative overflow-hidden text-center lg:text-left px-1 py-2 lg:px-4 lg:py-3 rounded-lg border transition-all text-xs lg:text-sm font-bold shadow-sm group 
  ${
    selectedPerson?.name === name
      ? "bg-gold-500 text-red-900 border-gold-300 ring-2 ring-gold-200 scale-105"
@@ -904,17 +990,18 @@
  }`;
 
             const content = document.createElement("div");
-            content.className = "relative z-10 flex flex-col";
+            content.className =
+              "relative z-10 flex flex-col items-center lg:items-start";
 
             const nameSpan = document.createElement("span");
             nameSpan.textContent = name;
-            nameSpan.className = "text-base";
+            nameSpan.className = "text-sm lg:text-base";
             content.appendChild(nameSpan);
 
             if (group) {
               const groupSpan = document.createElement("span");
               groupSpan.textContent = group;
-              groupSpan.className = `text-[10px] mt-1 px-1.5 py-0.5 rounded w-fit ${selectedPerson?.name === name ? "bg-red-800/20 text-red-900" : "bg-black/20 text-gold-400"}`;
+              groupSpan.className = `text-[9px] lg:text-[10px] mt-0.5 lg:mt-1 px-1 py-0.5 rounded w-fit ${selectedPerson?.name === name ? "bg-red-800/20 text-red-900" : "bg-black/20 text-gold-400"}`;
               content.appendChild(groupSpan);
             }
 
@@ -926,15 +1013,19 @@
           list.appendChild(section);
         };
 
-        createSection("🦁 领导组", state.leadersRemain, "leader"); // 分组展示员工
+        const shouldShow = (tabName) =>
+          currentRosterTab === "all" || currentRosterTab === tabName;
+
+        if (shouldShow("leader"))
+          createSection("🦁 领导组", state.leadersRemain, "leader");
 
         const g2 = state.employeesRemain.filter((p) => p.group === "二团");
         const g4 = state.employeesRemain.filter((p) => p.group === "四团");
         const g5 = state.employeesRemain.filter((p) => p.group === "五团");
 
-        createSection("🐴 二团", g2, "employee");
-        createSection("🐴 四团", g4, "employee");
-        createSection("🐴 五团", g5, "employee");
+        if (shouldShow("group2")) createSection("🐴 二团", g2, "employee");
+        if (shouldShow("group4")) createSection("🐴 四团", g4, "employee");
+        if (shouldShow("group5")) createSection("🐴 五团", g5, "employee");
       }
 
       function selectPerson(name, role, group) {
