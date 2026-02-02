@@ -179,8 +179,8 @@
 
       @media (max-width: 480px) {
         .round-table-container {
-          transform: scale(0.95); /* Slightly scale down on mobile if needed */
-          margin: 0 auto;
+          transform: scale(0.65); /* Significantly scale down for mobile 2-col */
+          margin: -40px -20px; /* Negative margin to reduce gap from scaling */
         }
       }
 
@@ -532,15 +532,15 @@
                   >
                     <span
                       id="remainingLabel"
-                      class="text-gold-200 font-bold text-lg"
+                      class="text-gold-200 font-bold text-sm"
                     ></span>
                     <!-- 移动端切换圆桌视图按钮 -->
                     <button
                       id="toggleLayoutBtn"
-                      class="lg:hidden px-3 py-1 bg-red-700 text-gold-100 rounded border border-gold-500/30 text-sm font-bold shrink-0"
+                      class="lg:hidden px-3 py-1 bg-red-700 text-gold-90 rounded border border-gold-500/30 text-sm font-bold shrink-0"
                       onclick="toggleLayoutView()"
                     >
-                      查看圆桌
+                      查看圆桌及抽奖编号
                     </button>
                   </div>
                 </div>
@@ -556,7 +556,7 @@
 
             <div
               id="layout"
-              class="hidden lg:grid fixed inset-0 z-50 lg:static lg:z-auto w-full h-full lg:h-auto bg-red-950 lg:bg-transparent p-4 lg:p-0 overflow-y-auto custom-scrollbar gap-4 grid-cols-1 lg:grid-cols-2 lg:flex-1 lg:pb-8 lg:min-h-0"
+              class="hidden lg:grid fixed inset-0 z-50 lg:static lg:z-auto w-full h-full lg:h-auto bg-red-950 lg:bg-transparent p-2 lg:p-0 overflow-y-auto custom-scrollbar gap-2 grid-cols-2 lg:grid-cols-2 lg:flex-1 lg:pb-8 lg:min-h-0"
             ></div>
           </div>
         </div>
@@ -939,10 +939,10 @@
         
         // Mobile Header (Title + Close Button)
         const mobileHeader = document.createElement("div");
-        mobileHeader.className = "lg:hidden flex justify-between items-center mb-6 sticky top-0 bg-red-950/95 backdrop-blur z-20 py-2 border-b border-gold-500/30 shrink-0 col-span-1";
+        mobileHeader.className = "lg:hidden flex justify-between items-center mb-2 sticky top-0 bg-red-950/95 backdrop-blur z-20 py-2 border-b border-gold-500/30 shrink-0 col-span-2 w-full px-2";
         mobileHeader.innerHTML = `
-          <h3 class="text-xl font-bold text-gold-300">🧧 圆桌分布图</h3>
-          <button onclick="toggleLayoutView()" class="px-4 py-2 bg-red-800 text-gold-200 rounded-lg border border-gold-500/30 shadow-lg active:scale-95 transition-transform font-bold text-sm">
+          <h3 class="text-lg font-bold text-gold-300">🧧 圆桌分布图</h3>
+          <button onclick="toggleLayoutView()" class="px-3 py-1 bg-red-800 text-gold-200 rounded-lg border border-gold-500/30 shadow-lg active:scale-95 transition-transform font-bold text-xs">
             关闭 ✕
           </button>
         `;
@@ -951,16 +951,16 @@
         state.tables.forEach((t) => {
           // ... (Card creation same as before) ...
           const card = document.createElement("div");
-          card.className = "rounded-2xl card-border p-5 bg-red-900/40 backdrop-blur-sm hover:transform hover:scale-[1.01] transition-transform duration-300";
+          card.className = "rounded-2xl card-border p-2 lg:p-5 bg-red-900/40 backdrop-blur-sm hover:transform hover:scale-[1.01] transition-transform duration-300 flex flex-col items-center justify-center";
           
           const title = document.createElement("div");
-          title.className = "flex items-center justify-between mb-2 pb-3 border-b-2 border-gold-500/20";
+          title.className = "flex items-center justify-between w-full mb-1 lg:mb-2 pb-1 lg:pb-3 border-b-2 border-gold-500/20";
           title.innerHTML = `
-            <h4 class="text-2xl font-black text-gold-300 flex items-center gap-2">
-               <span class="text-3xl">🧧</span> 圆桌 ${t.id}
+            <h4 class="text-lg lg:text-2xl font-black text-gold-300 flex items-center gap-1 lg:gap-2">
+               <span class="text-xl lg:text-3xl">🧧</span> 圆桌 ${t.id}
             </h4>
-            <span class="px-3 py-1 rounded-full bg-black/20 text-sm font-bold text-gold-400 border border-gold-500/20">
-               ${t.seats.filter(s => s.used).length}/${t.seats.length} 人
+            <span class="px-2 py-0.5 lg:px-3 lg:py-1 rounded-full bg-black/20 text-xs lg:text-sm font-bold text-gold-400 border border-gold-500/20">
+               ${t.seats.filter(s => s.used).length}/${t.seats.length}
             </span>
           `;
           card.appendChild(title);
@@ -1046,7 +1046,7 @@
         } else {
           layout.classList.add("hidden");
           document.body.style.overflow = ""; // Unlock scroll
-          btn.textContent = "查看圆桌";
+          btn.textContent = "查看圆桌及抽奖编号";
           btn.classList.remove("bg-gold-600", "text-red-900");
           btn.classList.add("bg-red-700", "text-gold-100");
         }
