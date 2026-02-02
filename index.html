@@ -1,0 +1,1189 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>聚餐圆桌座位抽签</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: "#9f1239", // 玫瑰红/枣红
+                600: "#881337",
+                700: "#4c0519",
+              },
+              accent: {
+                DEFAULT: "#f59e0b",
+                500: "#d97706",
+                600: "#b45309",
+              },
+              gold: {
+                100: "#fef3c7",
+                200: "#fde68a",
+                300: "#fcd34d",
+                400: "#fbbf24",
+                500: "#f59e0b",
+                600: "#d97706",
+                700: "#b45309",
+                800: "#92400e",
+              },
+            },
+            fontFamily: {
+              serif: ['"Noto Serif SC"', "serif"],
+            },
+            backgroundImage: {
+              "pattern-clouds":
+                'url(\'data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23f59e0b" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\')',
+            },
+          },
+        },
+      };
+    </script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+      @keyframes lantern-swing {
+        0%,
+        100% {
+          transform: rotate(-5deg);
+        }
+
+        50% {
+          transform: rotate(5deg);
+        }
+      }
+
+      @keyframes glow {
+        0% {
+          text-shadow:
+            0 0 8px rgba(159, 18, 57, 0.8),
+            0 0 16px rgba(251, 191, 36, 0.6);
+        }
+
+        50% {
+          text-shadow:
+            0 0 20px rgba(159, 18, 57, 1),
+            0 0 30px rgba(251, 191, 36, 0.8);
+        }
+
+        100% {
+          text-shadow:
+            0 0 8px rgba(159, 18, 57, 0.8),
+            0 0 16px rgba(251, 191, 36, 0.6);
+        }
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      .animated-bg {
+        background-color: #450a0a;
+        background-image:
+          radial-gradient(circle at 50% 0%, #881337, #450a0a),
+          url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23f59e0b\" fill-opacity=\"0.05\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+      }
+
+      .lantern {
+        position: absolute;
+        top: -20px;
+        width: 100px;
+        height: 120px;
+        background: linear-gradient(to bottom, #be123c, #881337);
+        border-radius: 50px;
+        box-shadow:
+          0 10px 30px rgba(0, 0, 0, 0.4),
+          inset 0 0 30px rgba(251, 191, 36, 0.2);
+        animation: lantern-swing 4s ease-in-out infinite;
+        z-index: 20;
+        border: 2px solid #92400e;
+      }
+
+      .lantern::before {
+        content: "";
+        position: absolute;
+        top: -10px;
+        left: 40px;
+        width: 20px;
+        height: 15px;
+        background: #b45309;
+        border-radius: 4px;
+      }
+
+      .lantern::after {
+        content: "";
+        position: absolute;
+        bottom: -15px;
+        left: 42px;
+        width: 16px;
+        height: 40px;
+        background: linear-gradient(to bottom, #b45309, #92400e);
+        border-radius: 0 0 8px 8px;
+      }
+
+      .card-border {
+        background: rgba(69, 10, 10, 0.85);
+        border: 1px solid #b45309;
+        box-shadow:
+          0 0 20px rgba(0, 0, 0, 0.4),
+          inset 0 0 30px rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
+
+      .card-border::before {
+        content: "";
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        right: 4px;
+        bottom: 4px;
+        border: 1px solid rgba(180, 83, 9, 0.3);
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .gold-text {
+        background: linear-gradient(to bottom, #fcd34d, #f59e0b, #b45309);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      }
+
+      /* 圆桌座位布局 */
+      .round-table-container {
+        position: relative;
+        width: 380px;
+        /* 增大容器宽度 */
+        height: 380px;
+        /* 增大容器高度 */
+        margin: 20px auto;
+        transform-origin: center center;
+      }
+
+      @media (max-width: 480px) {
+        .round-table-container {
+          transform: scale(0.8);
+          margin: -20px auto;
+        }
+      }
+
+      @media (min-width: 1536px) and (max-width: 1680px) {
+        .round-table-container {
+          transform: scale(0.9);
+        }
+      }
+
+      .round-table {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #78350f, #451a03);
+        border: 4px solid #b45309;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+      }
+
+      .seat-item {
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        font-size: 11px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        z-index: 5;
+        text-align: center;
+        /* 确保文字居中 */
+        overflow: hidden;
+        /* 防止溢出 */
+        line-height: 1.1;
+        /* 紧凑行高 */
+      }
+
+      .seat-item.empty {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px dashed #78350f;
+        color: #9ca3af;
+      }
+
+      .seat-item.occupied {
+        background: radial-gradient(circle, #fcd34d, #d97706);
+        border: 2px solid #fff;
+        color: #451a03;
+        transform: scale(1.1);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .seat-item.occupied.leader {
+        background: radial-gradient(circle, #fecaca, #dc2626);
+        color: #fff;
+        border-color: #fcd34d;
+      }
+
+      /* 卷轴风格 */
+      .scroll-bg {
+        background-color: #fff7ed;
+        background-image: url('data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M1 1h2v2H1V1zm4 0h2v2H5V1zm4 0h2v2H9V1zm4 0h2v2h-2V1zm4 0h2v2h-2V1z" fill="%23fcd34d" fill-opacity="0.2" fill-rule="evenodd"/%3E%3C/svg%3E');
+        border-top: 10px solid #92400e;
+        border-bottom: 10px solid #92400e;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      }
+    </style>
+  </head>
+
+  <body
+    class="min-h-screen animated-bg text-orange-50 font-serif overflow-x-hidden"
+  >
+    <!-- 装饰灯笼 -->
+
+    <div class="lantern left-10 delay-100"></div>
+
+    <div class="lantern left-40 scale-75 delay-500"></div>
+
+    <div class="lantern right-10 delay-300"></div>
+
+    <div class="lantern right-40 scale-75 delay-700"></div>
+
+    <header class="fixed top-4 left-4 right-4 z-30">
+      <div
+        class="mx-auto max-w-6xl rounded-2xl bg-red-900/40 backdrop-blur card-border px-6 py-4 flex items-center justify-between"
+      >
+        <h1
+          class="text-2xl md:text-3xl font-bold tracking-wide text-[#FFDF40]"
+          style="animation: glow 2.5s ease-in-out infinite; margin: 0 auto"
+        >
+          聚餐圆桌座位抽签
+        </h1>
+
+        <div class="flex items-center gap-3">
+          <button
+            id="endGameBtn"
+            class="hidden cursor-pointer px-4 py-2 rounded-lg border border-red-300 text-red-100 hover:bg-red-500/20 transition-colors duration-200"
+          >
+            终止此次游戏
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="pt-32 pb-16 px-4">
+      <section
+        id="setupSection"
+        class="mx-auto max-w-5xl rounded-2xl card-border p-8"
+      >
+        <div class="absolute -top-6 left-1/2 transform -translate-x-1/2">
+          <div
+            class="bg-red-700 text-gold-200 px-8 py-2 rounded-full border-2 border-gold-400 shadow-lg text-xl font-bold tracking-widest"
+          >
+            🧧 活动设置 🧧
+          </div>
+        </div>
+
+        <form id="setupForm" class="space-y-8 mt-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <label class="block group">
+              <span
+                class="text-gold-200 font-bold text-lg mb-2 block group-hover:text-gold-100 transition-colors"
+                >圆桌数量</span
+              >
+
+              <input
+                type="number"
+                id="tableCount"
+                class="w-full rounded-xl bg-red-950/50 border-2 border-red-800 text-gold-100 px-4 py-3 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all text-xl"
+                min="1"
+                value="4"
+              />
+            </label>
+
+            <label class="block group">
+              <span
+                class="text-gold-200 font-bold text-lg mb-2 block group-hover:text-gold-100 transition-colors"
+                >每桌座位数</span
+              >
+
+              <input
+                type="number"
+                id="seatsPerTable"
+                class="w-full rounded-xl bg-red-950/50 border-2 border-red-800 text-gold-100 px-4 py-3 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all text-xl"
+                min="1"
+                value="8"
+              />
+            </label>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <label class="block group">
+              <span
+                class="text-gold-200 font-bold text-lg mb-2 flex justify-between items-end group-hover:text-gold-100 transition-colors"
+              >
+                🦁 领导名单
+                <span class="text-xs font-normal text-gold-400/80"
+                  >（每行一个名字）</span
+                >
+              </span>
+
+              <textarea
+                id="leaderNames"
+                rows="6"
+                class="w-full rounded-xl bg-red-950/50 border-2 border-red-800 text-gold-100 px-4 py-3 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all placeholder-red-900/50 custom-scrollbar"
+              ></textarea>
+            </label>
+
+            <div class="space-y-4">
+              <span class="text-gold-200 font-bold text-lg block"
+                >🐴 员工分组名单</span
+              >
+
+              <div
+                class="grid grid-cols-3 gap-2 bg-red-950/30 p-2 rounded-t-xl border-b-2 border-red-800"
+              >
+                <button
+                  type="button"
+                  onclick="switchTab('group2')"
+                  id="tab-group2"
+                  class="py-2 px-1 text-sm font-bold rounded-lg transition-all bg-red-600 text-white shadow-lg"
+                >
+                  二团
+                </button>
+
+                <button
+                  type="button"
+                  onclick="switchTab('group4')"
+                  id="tab-group4"
+                  class="py-2 px-1 text-sm font-bold rounded-lg transition-all text-red-300 hover:bg-red-800/50"
+                >
+                  四团
+                </button>
+
+                <button
+                  type="button"
+                  onclick="switchTab('group5')"
+                  id="tab-group5"
+                  class="py-2 px-1 text-sm font-bold rounded-lg transition-all text-red-300 hover:bg-red-800/50"
+                >
+                  五团
+                </button>
+              </div>
+
+              <div class="relative">
+                <textarea
+                  id="group2Names"
+                  rows="6"
+                  class="w-full rounded-b-xl rounded-tr-xl bg-red-950/50 border-2 border-red-800 text-gold-100 px-4 py-3 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all placeholder-red-900/50 custom-scrollbar"
+                  placeholder="二团人员名单..."
+                ></textarea>
+
+                <textarea
+                  id="group4Names"
+                  rows="6"
+                  class="hidden w-full rounded-b-xl rounded-tr-xl bg-red-950/50 border-2 border-red-800 text-gold-100 px-4 py-3 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all placeholder-red-900/50 custom-scrollbar"
+                  placeholder="四团人员名单..."
+                ></textarea>
+
+                <textarea
+                  id="group5Names"
+                  rows="6"
+                  class="hidden w-full rounded-b-xl rounded-tr-xl bg-red-950/50 border-2 border-red-800 text-gold-100 px-4 py-3 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all placeholder-red-900/50 custom-scrollbar"
+                  placeholder="五团人员名单..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-6 text-center">
+            <button
+              id="startBtn"
+              type="submit"
+              class="w-full md:w-2/3 cursor-pointer px-8 py-4 rounded-full bg-gradient-to-b from-gold-400 to-gold-600 hover:from-gold-300 hover:to-gold-500 text-red-900 font-black text-2xl shadow-[0_4px_0_#92400e,0_10px_20px_rgba(0,0,0,0.3)] active:shadow-none active:translate-y-1 transition-all transform hover:scale-[1.02]"
+            >
+              🚀 开启鸿运抽签 🚀
+            </button>
+          </div>
+        </form>
+
+        <p
+          id="setupHint"
+          class="mt-4 text-center text-red-300 font-bold bg-black/20 py-2 rounded-lg"
+        ></p>
+      </section>
+
+      <section id="drawSection" class="hidden mx-auto max-w-[98vw] 2xl:max-w-[1800px] mt-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- 左侧：待签到墙 -->
+
+          <div
+            class="lg:col-span-3 rounded-2xl card-border p-0 overflow-hidden flex flex-col h-[calc(100vh-160px)]"
+          >
+            <div
+              class="bg-red-800/80 p-4 text-center border-b-2 border-gold-500/30"
+            >
+              <h3 class="text-xl font-black text-gold-300">📜 待签到名单</h3>
+            </div>
+
+            <div
+              id="rosterList"
+              class="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-6"
+            >
+              <!-- 动态生成 -->
+            </div>
+          </div>
+
+          <!-- 中间：控制区 -->
+
+          <div class="lg:col-span-9 flex flex-col h-[calc(100vh-160px)]">
+            <div
+              class="rounded-2xl card-border p-6 mb-4 bg-gradient-to-r from-red-900 to-red-800 shrink-0"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-6">
+                <div class="flex gap-4">
+                  <button
+                    id="drawLeaderBtn"
+                    class="group relative cursor-pointer px-8 py-3 rounded-xl bg-red-700 border-2 border-gold-600 text-gold-100 font-bold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 overflow-hidden"
+                  >
+                    <span class="relative z-10 flex items-center gap-2 text-lg"
+                      >🦁 领导签到</span
+                    >
+
+                    <div
+                      class="absolute inset-0 bg-gold-400/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"
+                    ></div>
+                  </button>
+
+                  <button
+                    id="drawEmployeeBtn"
+                    class="group relative cursor-pointer px-8 py-3 rounded-xl bg-gold-600 border-2 border-gold-300 text-red-900 font-bold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-500 overflow-hidden"
+                  >
+                    <span class="relative z-10 flex items-center gap-2 text-lg"
+                      >🐴 员工签到</span
+                    >
+
+                    <div
+                      class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"
+                    ></div>
+                  </button>
+                </div>
+
+                <div
+                  class="bg-black/20 px-4 py-2 rounded-lg border border-gold-500/30"
+                >
+                  <span
+                    id="remainingLabel"
+                    class="text-gold-200 font-bold text-lg"
+                  ></span>
+                </div>
+              </div>
+
+              <!-- 当前选中提示 -->
+
+              <div
+                id="selectionHint"
+                class="mt-6 p-4 bg-gold-900/30 rounded-xl border border-gold-500/50 text-center hidden animate-[pulse_2s_infinite]"
+              >
+                <span class="text-gold-200 text-lg">当前选中：</span>
+
+                <span
+                  id="selectedNameDisplay"
+                  class="text-4xl font-black text-gold-100 mx-4 drop-shadow-md"
+                ></span>
+
+                <span class="text-sm text-gold-300/80"
+                  >（请点击上方对应按钮开始抽签）</span
+                >
+              </div>
+            </div>
+
+            <div
+              id="layout"
+              class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-8"
+            ></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div
+      id="overlay"
+      class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center"
+    >
+      <div
+        class="relative w-[95%] max-w-2xl rounded-3xl bg-[#fff7ed] border-[12px] border-[#b45309] p-12 text-center shadow-[0_0_100px_rgba(251,191,36,0.6)] transform scale-100 transition-transform duration-300"
+      >
+        <!-- 卷轴装饰 -->
+
+        <div
+          class="absolute -top-6 left-1/2 -translate-x-1/2 w-[110%] h-12 bg-[#92400e] rounded-full shadow-lg flex items-center justify-between px-4"
+        >
+          <div class="w-6 h-6 bg-[#fbbf24] rounded-full shadow-inner"></div>
+
+          <div class="w-full h-1 bg-[#fbbf24]/30 mx-4"></div>
+
+          <div class="w-6 h-6 bg-[#fbbf24] rounded-full shadow-inner"></div>
+        </div>
+        <div
+          class="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[110%] h-12 bg-[#92400e] rounded-full shadow-lg flex items-center justify-between px-4"
+        >
+          <div class="w-6 h-6 bg-[#fbbf24] rounded-full shadow-inner"></div>
+
+          <div class="w-full h-1 bg-[#fbbf24]/30 mx-4"></div>
+
+          <div class="w-6 h-6 bg-[#fbbf24] rounded-full shadow-inner"></div>
+        </div>
+
+        <!-- 内容区 -->
+
+        <div class="relative z-10">
+          <div
+            class="mx-auto w-40 h-40 rounded-full border-8 border-[#fbbf24] flex items-center justify-center bg-[#dc2626] animate-[spinFast_3s_linear_infinite] shadow-xl mb-8"
+          >
+            <span class="text-6xl filter drop-shadow-lg">🧧</span>
+          </div>
+
+          <h3
+            id="overlayTitle"
+            class="text-5xl font-black text-[#b45309] mb-6 tracking-wide"
+            style="text-shadow: 2px 2px 0px rgba(251, 191, 36, 0.5)"
+          ></h3>
+
+          <div
+            class="bg-[#fff1f2] border-2 border-[#fecaca] rounded-2xl p-6 mb-8"
+          >
+            <p
+              id="overlaySub"
+              class="text-3xl text-[#991b1b] font-bold leading-relaxed"
+            ></p>
+          </div>
+
+          <button
+            id="overlayClose"
+            class="cursor-pointer px-12 py-4 rounded-full bg-gradient-to-r from-[#d97706] to-[#b45309] hover:from-[#fbbf24] hover:to-[#d97706] text-white font-black text-2xl shadow-[0_6px_0_#78350f] active:shadow-none active:translate-y-1 transition-all"
+          >
+            ✨ 纳福归位 ✨
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const fourBless = [
+        "马到成功",
+        "龙马精神",
+        "一马当先",
+        "万马奔腾",
+        "马上发财",
+        "马上有钱",
+        "马运亨通",
+        "马势如虹",
+        "骏马奔腾",
+        "天马行空",
+        "事业腾飞",
+        "步步高升",
+        "金玉满堂",
+        "财源广进",
+        "喜气洋洋",
+        "鸿运当头",
+        "吉星高照",
+        "鹏程万里",
+        "大展宏图",
+        "诸事顺利",
+        "心想事成",
+        "一帆风顺",
+        "蒸蒸日上",
+        "锦上添花",
+        "福星高照",
+        "恭喜发财",
+        "阖家幸福",
+        "顺心如意",
+        "春风得意",
+        "祥瑞满堂",
+        "紫气东来",
+        "六六大顺",
+        "八方来财",
+        "招财进宝",
+        "日进斗金",
+        "腰缠万贯",
+        "富贵吉祥",
+        "开工大吉",
+        "大吉大利",
+        "万事如意",
+        "岁岁平安",
+        "五福临门",
+        "三阳开泰",
+        "喜从天降",
+        "好运连连",
+        "笑口常开",
+        "福寿安康",
+        "平平安安",
+        "团团圆圆",
+        "幸福美满",
+        "福禄双全",
+        "官运亨通",
+        "飞黄腾达",
+        "前程似锦",
+        "功成名就",
+        "一鸣惊人",
+        "才高八斗",
+        "学富五车",
+        "聪明伶俐",
+        "机智过人",
+      ];
+      const horsePhrases = [
+        "祝你马上赢钱",
+        "祝你马到成功",
+        "祝你龙马精神",
+        "祝你万马奔腾",
+        "祝你马上有钱",
+        "祝你马上发财",
+        "祝你一路高升",
+        "祝你前程似锦",
+        "祝你策马奔腾",
+        "祝你汗马功劳",
+        "祝你快马加鞭",
+        "祝你老马识途",
+        "祝你千军万马",
+        "祝你人强马壮",
+        "祝你天马行空",
+        "祝你信马由缰",
+        "祝你倚马可待",
+        "祝你走马上任",
+        "祝你马踏飞燕",
+        "祝你金马玉堂",
+        "祝你鞍马劳顿",
+        "祝你兵强马壮",
+        "祝你车水马龙",
+        "祝你单枪匹马",
+        "祝你风樯阵马",
+        "祝你弓调马服",
+        "祝你光车骏马",
+        "祝你金戈铁马",
+        "祝你厉兵秣马",
+        "祝你龙神马壮",
+        "祝你马不停蹄",
+        "祝你马首是瞻",
+      ];
+
+      const defaultLeaders = ["张总", "李总", "王总", "赵总"]; // 新的分组数据
+
+      const defaultGroup2 = [
+        "王建国",
+        "李建军",
+        "张伟",
+        "王伟",
+        "李娜",
+        "王芳",
+        "李静",
+        "王静",
+      ];
+      const defaultGroup4 = [
+        "张强",
+        "王强",
+        "李强",
+        "刘伟",
+        "刘洋",
+        "王洋",
+        "李洋",
+        "张洋",
+        "赵军",
+        "孙军",
+        "李军",
+        "王军",
+      ];
+      const defaultGroup5 = [
+        "张军",
+        "刘军",
+        "陈军",
+        "杨军",
+        "赵强",
+        "孙强",
+        "钱伟",
+        "周伟",
+        "吴伟",
+        "郑伟",
+        "王磊",
+        "李磊",
+      ];
+
+      function switchTab(group) {
+        ["group2", "group4", "group5"].forEach((g) => {
+          const btn = document.getElementById(`tab-${g}`);
+          const area = document.getElementById(`${g}Names`);
+          if (g === group) {
+            btn.classList.remove("text-red-300", "hover:bg-red-800/50");
+            btn.classList.add("bg-red-600", "text-white", "shadow-lg");
+            area.classList.remove("hidden");
+          } else {
+            btn.classList.add("text-red-300", "hover:bg-red-800/50");
+            btn.classList.remove("bg-red-600", "text-white", "shadow-lg");
+            area.classList.add("hidden");
+          }
+        });
+      } // 初始化时填充默认名单
+
+      document.addEventListener("DOMContentLoaded", () => {
+        if (!loadState()) {
+          document.getElementById("leaderNames").value =
+            defaultLeaders.join("\n");
+          document.getElementById("group2Names").value =
+            defaultGroup2.join("\n");
+          document.getElementById("group4Names").value =
+            defaultGroup4.join("\n");
+          document.getElementById("group5Names").value =
+            defaultGroup5.join("\n");
+        }
+      });
+
+      const storeKey = "seatGameStateV4"; // Version bump
+      let state = null;
+      let selectedPerson = null; // 当前选中的待抽签人
+
+      function freshState(cfg) {
+        const tables = Array.from({ length: cfg.tableCount }, () => ({
+          seats: Array.from({ length: cfg.seatsPerTable }, () => ({
+            used: false,
+            label: "待定",
+            role: "",
+            name: "",
+            group: "",
+          })),
+          leaders: 0,
+          employees: 0,
+        }));
+        return {
+          cfg,
+          tables,
+          leadersRemain: cfg.leaderNames, // 员工改为对象数组结构 { name, group }
+          employeesRemain: [
+            ...cfg.group2Names.map((n) => ({ name: n, group: "二团" })),
+            ...cfg.group4Names.map((n) => ({ name: n, group: "四团" })),
+            ...cfg.group5Names.map((n) => ({ name: n, group: "五团" })),
+          ],
+          blessingIdx: 0,
+          finished: false,
+        };
+      }
+
+      function saveState() {
+        localStorage.setItem(storeKey, JSON.stringify(state));
+      }
+
+      function loadState() {
+        const raw = localStorage.getItem(storeKey);
+        if (!raw) return null;
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      }
+
+      function clearState() {
+        localStorage.removeItem(storeKey);
+        state = null;
+        selectedPerson = null;
+      }
+
+      function chooseTable(role) {
+        const cap = state.cfg.seatsPerTable;
+        const candidates = state.tables
+          .map((t, i) => ({
+            i,
+            leaders: t.leaders,
+            employees: t.employees,
+            total: t.leaders + t.employees,
+            free: t.seats.filter((s) => !s.used).length,
+          }))
+          .filter((x) => x.total < cap && x.free > 0);
+        if (candidates.length === 0) return -1; // 随机性增强
+
+        if (role === "leader") {
+          const minLead = Math.min(...candidates.map((c) => c.leaders));
+          const step1 = candidates.filter((c) => c.leaders === minLead);
+          const minTotal = Math.min(...step1.map((c) => c.total));
+          const step2 = step1.filter((c) => c.total === minTotal);
+          return step2[Math.floor(Math.random() * step2.length)].i;
+        } else {
+          const minEmp = Math.min(...candidates.map((c) => c.employees));
+          const step1 = candidates.filter((c) => c.employees === minEmp);
+          const minTotal = Math.min(...step1.map((c) => c.total));
+          const step2 = step1.filter((c) => c.total === minTotal);
+          return step2[Math.floor(Math.random() * step2.length)].i;
+        }
+      }
+
+      function assign(role, name, group = "") {
+        const tableIndex = chooseTable(role);
+        if (tableIndex < 0) return { ok: false, reason: "座位已满" };
+        const t = state.tables[tableIndex];
+        const seatIndex = t.seats.findIndex((s) => !s.used);
+        if (seatIndex < 0) return { ok: false, reason: "座位已满" };
+
+        const label = fourBless[state.blessingIdx % fourBless.length];
+        state.blessingIdx += 1;
+
+        t.seats[seatIndex] = { used: true, label, role, name, group };
+
+        if (role === "leader") {
+          t.leaders += 1;
+          state.leadersRemain = state.leadersRemain.filter((n) => n !== name);
+        } else {
+          t.employees += 1;
+          state.employeesRemain = state.employeesRemain.filter(
+            (p) => p.name !== name,
+          );
+        }
+
+        if (
+          state.leadersRemain.length === 0 &&
+          state.employeesRemain.length === 0
+        )
+          state.finished = true;
+
+        saveState();
+        return { ok: true, tableIndex, label };
+      }
+
+      function renderRoster() {
+        const list = document.getElementById("rosterList");
+        list.innerHTML = "";
+
+        const createSection = (title, items, role) => {
+          if (items.length === 0) return;
+          const section = document.createElement("div");
+          section.className = "mb-6";
+
+          const h = document.createElement("h4");
+          h.className =
+            "text-lg font-black text-gold-300 mb-3 sticky top-0 bg-red-800/95 py-2 px-2 shadow-sm border-l-4 border-gold-500";
+          h.textContent = title + ` (${items.length})`;
+          section.appendChild(h);
+
+          const grid = document.createElement("div");
+          grid.className = "grid grid-cols-2 gap-3";
+          items.forEach((item) => {
+            const name = typeof item === "string" ? item : item.name;
+            const group = typeof item === "string" ? "" : item.group;
+
+            const btn = document.createElement("button");
+            btn.className = `relative overflow-hidden text-left px-4 py-3 rounded-lg border-2 transition-all text-sm font-bold shadow-sm group 
+ ${
+   selectedPerson?.name === name
+     ? "bg-gold-500 text-red-900 border-gold-300 ring-2 ring-gold-200 scale-105"
+     : "bg-red-900/40 border-gold-900/30 text-gold-100 hover:bg-red-700 hover:border-gold-500/50"
+ }`;
+
+            const content = document.createElement("div");
+            content.className = "relative z-10 flex flex-col";
+
+            const nameSpan = document.createElement("span");
+            nameSpan.textContent = name;
+            nameSpan.className = "text-base";
+            content.appendChild(nameSpan);
+
+            if (group) {
+              const groupSpan = document.createElement("span");
+              groupSpan.textContent = group;
+              groupSpan.className = `text-[10px] mt-1 px-1.5 py-0.5 rounded w-fit ${selectedPerson?.name === name ? "bg-red-800/20 text-red-900" : "bg-black/20 text-gold-400"}`;
+              content.appendChild(groupSpan);
+            }
+
+            btn.appendChild(content);
+            btn.onclick = () => selectPerson(name, role, group);
+            grid.appendChild(btn);
+          });
+          section.appendChild(grid);
+          list.appendChild(section);
+        };
+
+        createSection("🦁 领导组", state.leadersRemain, "leader"); // 分组展示员工
+
+        const g2 = state.employeesRemain.filter((p) => p.group === "二团");
+        const g4 = state.employeesRemain.filter((p) => p.group === "四团");
+        const g5 = state.employeesRemain.filter((p) => p.group === "五团");
+
+        createSection("🐴 二团", g2, "employee");
+        createSection("🐴 四团", g4, "employee");
+        createSection("🐴 五团", g5, "employee");
+      }
+
+      function selectPerson(name, role, group) {
+        selectedPerson = { name, role, group };
+        renderRoster(); // update highlight
+        const hint = document.getElementById("selectionHint");
+        const display = document.getElementById("selectedNameDisplay");
+        hint.classList.remove("hidden");
+        display.textContent = name + (group ? `（${group}）` : ""); // Update buttons state
+
+        const dl = document.getElementById("drawLeaderBtn");
+        const de = document.getElementById("drawEmployeeBtn");
+
+        dl.disabled = role !== "leader";
+        de.disabled = role !== "employee";
+        dl.classList.toggle("opacity-50", dl.disabled);
+        de.classList.toggle("opacity-50", de.disabled);
+        dl.classList.toggle("cursor-not-allowed", dl.disabled);
+        de.classList.toggle("cursor-not-allowed", de.disabled);
+      }
+
+      function renderLayout() {
+        const container = document.getElementById("layout");
+        container.innerHTML = "";
+        state.tables.forEach((t, i) => {
+          const card = document.createElement("div");
+          card.className =
+            "rounded-2xl card-border p-5 bg-red-900/40 backdrop-blur-sm hover:transform hover:scale-[1.01] transition-transform duration-300";
+
+          const title = document.createElement("div");
+          title.className =
+            "flex items-center justify-between mb-2 pb-3 border-b-2 border-gold-500/20";
+
+          const h = document.createElement("h4");
+          h.className =
+            "text-2xl font-black text-gold-300 flex items-center gap-2";
+          h.innerHTML = `<span class="text-3xl">🧧</span> 圆桌 ${i + 1}`;
+
+          const sub = document.createElement("span");
+          sub.className =
+            "px-3 py-1 rounded-full bg-black/20 text-sm font-bold text-gold-400 border border-gold-500/20";
+          sub.textContent = `${t.seats.filter((s) => s.used).length}/${t.seats.length} 人`;
+
+          title.appendChild(h);
+          title.appendChild(sub);
+          card.appendChild(title); // 圆形布局容器
+
+          const tableContainer = document.createElement("div");
+          tableContainer.className = "round-table-container"; // 圆桌主体
+
+          const roundTable = document.createElement("div");
+          roundTable.className = "round-table";
+          const tableLabel = document.createElement("div");
+          tableLabel.className = "text-gold-200 font-black text-xl";
+          tableLabel.textContent = `桌 ${i + 1}`;
+          roundTable.appendChild(tableLabel);
+          tableContainer.appendChild(roundTable); // 计算座位坐标
+
+          const totalSeats = t.seats.length;
+          const radius = 145; // 增大半径 (原110)
+          const centerX = 190; // 容器中心X (380/2)
+          const centerY = 190; // 容器中心Y (380/2)
+          const startAngle = -90 * (Math.PI / 180); // 从上方开始
+
+          t.seats.forEach((s, idx) => {
+            const angle = startAngle + idx * ((2 * Math.PI) / totalSeats);
+            const x = centerX + radius * Math.cos(angle) - 32; // 32是座位宽度的一半(64/2)
+            const y = centerY + radius * Math.sin(angle) - 32;
+
+            const seat = document.createElement("div");
+            seat.className = `seat-item ${s.used ? "occupied" : "empty"} ${s.role === "leader" ? "leader" : ""}`;
+            seat.style.left = `${x}px`;
+            seat.style.top = `${y}px`;
+
+            if (s.used) {
+              const nameDiv = document.createElement("div");
+              nameDiv.className =
+                "font-black leading-none truncate w-full px-0.5 text-[13px]"; // 增大姓名 (原默认)
+              nameDiv.textContent = s.name;
+              seat.appendChild(nameDiv);
+              if (s.group) {
+                const groupDiv = document.createElement("div");
+                groupDiv.className =
+                  "text-[10px] font-bold opacity-90 mt-0.5 scale-95 origin-center"; // 增大部门 (原8px scale-90)
+                groupDiv.textContent = s.group;
+                seat.appendChild(groupDiv);
+              }
+              const blessDiv = document.createElement("div");
+              blessDiv.className =
+                "text-[9px] text-gold-200 mt-0.5 font-bold tracking-tight w-full px-0.5 truncate scale-95 origin-center"; // 增大祝福语 (原8px)
+              blessDiv.textContent = s.label;
+              seat.appendChild(blessDiv);
+            } else {
+              seat.textContent = idx + 1;
+            }
+
+            tableContainer.appendChild(seat);
+          });
+
+          card.appendChild(tableContainer);
+          container.appendChild(card);
+        });
+
+        const remaining = document.getElementById("remainingLabel");
+        remaining.textContent = `剩余未签到：${state.leadersRemain.length + state.employeesRemain.length} 人`;
+
+        renderRoster();
+      }
+
+      function showOverlay(title, sub) {
+        const ov = document.getElementById("overlay");
+        const t = document.getElementById("overlayTitle");
+        const s = document.getElementById("overlaySub");
+        t.textContent = title;
+        s.textContent = sub;
+        ov.classList.remove("hidden"); // 金色 + 红色 + 橙色纸屑
+        confetti({
+          particleCount: 200,
+          spread: 120,
+          origin: { y: 0.6 },
+          colors: ["#fbbf24", "#dc2626", "#d97706", "#ffffff"],
+          gravity: 0.8,
+          scalar: 1.2,
+        });
+      }
+
+      function closeOverlay() {
+        document.getElementById("overlay").classList.add("hidden");
+      }
+
+      function startGameFromForm(e) {
+        e.preventDefault();
+        const tableCount = parseInt(
+          document.getElementById("tableCount").value,
+          10,
+        );
+        const seatsPerTable = parseInt(
+          document.getElementById("seatsPerTable").value,
+          10,
+        ); // Parse names
+
+        const parse = (id) =>
+          document
+            .getElementById(id)
+            .value.split("\n")
+            .map((s) => s.trim())
+            .filter((s) => s);
+        const leaderNames = parse("leaderNames");
+        const group2Names = parse("group2Names");
+        const group4Names = parse("group4Names");
+        const group5Names = parse("group5Names");
+
+        const totalCap = tableCount * seatsPerTable;
+        const totalPeople =
+          leaderNames.length +
+          group2Names.length +
+          group4Names.length +
+          group5Names.length;
+        const hint = document.getElementById("setupHint");
+
+        if (tableCount < 1 || seatsPerTable < 1) {
+          hint.textContent = "请输入有效的圆桌数量与座位数";
+          return;
+        }
+        if (totalPeople < 1) {
+          hint.textContent = "请至少录入一位人员名单";
+          return;
+        }
+        if (totalPeople > totalCap) {
+          hint.textContent = `总人数（${totalPeople}）超过总座位数（${totalCap}），请增加圆桌或座位`;
+          return;
+        }
+
+        state = freshState({
+          tableCount,
+          seatsPerTable,
+          leaderNames,
+          group2Names,
+          group4Names,
+          group5Names,
+        });
+        saveState();
+
+        document.getElementById("setupSection").classList.add("hidden");
+        document.getElementById("drawSection").classList.remove("hidden");
+        document.getElementById("endGameBtn").classList.remove("hidden");
+        renderLayout();
+      }
+
+      function tryResume() {
+        const loaded = loadState();
+        if (loaded && !loaded.finished) {
+          state = loaded;
+          document.getElementById("setupSection").classList.add("hidden");
+          document.getElementById("drawSection").classList.remove("hidden");
+          document.getElementById("endGameBtn").classList.remove("hidden");
+          renderLayout();
+        }
+      }
+
+      function onDraw(role) {
+        if (!selectedPerson || selectedPerson.role !== role) {
+          alert(
+            "请先在左侧列表中选择要签到的" +
+              (role === "leader" ? "领导" : "员工"),
+          );
+          return;
+        }
+
+        const res = assign(role, selectedPerson.name, selectedPerson.group);
+        if (!res.ok) {
+          showOverlay("座位已满", "请终止游戏或调整参数");
+          return;
+        }
+        const idx = res.tableIndex + 1;
+        const bless =
+          horsePhrases[Math.floor(Math.random() * horsePhrases.length)];
+        showOverlay(`🎉 圆桌 ${idx}`, `${selectedPerson.name}，${bless}`);
+
+        selectedPerson = null;
+        document.getElementById("selectionHint").classList.add("hidden");
+        document.getElementById("drawLeaderBtn").disabled = true;
+        document.getElementById("drawLeaderBtn").classList.add("opacity-50");
+        document.getElementById("drawEmployeeBtn").disabled = true;
+        document.getElementById("drawEmployeeBtn").classList.add("opacity-50");
+
+        renderLayout();
+      }
+
+      document
+        .getElementById("setupForm")
+        .addEventListener("submit", startGameFromForm);
+      document
+        .getElementById("drawLeaderBtn")
+        .addEventListener("click", () => onDraw("leader"));
+      document
+        .getElementById("drawEmployeeBtn")
+        .addEventListener("click", () => onDraw("employee"));
+      document.getElementById("overlayClose").addEventListener("click", () => {
+        closeOverlay();
+      });
+      document.getElementById("endGameBtn").addEventListener("click", () => {
+        if (confirm("确定要终止当前游戏并清除所有数据吗？")) {
+          clearState();
+          location.reload();
+        }
+      });
+
+      tryResume();
+    </script>
+  </body>
+</html>
