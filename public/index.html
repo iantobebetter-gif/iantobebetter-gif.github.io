@@ -505,7 +505,7 @@
                 <!-- 顶部：控制栏 -->
                 <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
                   <!-- 左侧：输入框 + 签到按钮 -->
-                  <div class="flex gap-2 w-full lg:w-auto">
+                  <div id="signInArea" class="flex gap-2 w-full lg:w-auto">
                     <input
                       type="text"
                       id="nameInput"
@@ -524,6 +524,23 @@
                     >
                       签到
                     </button>
+                  </div>
+
+                  <!-- 已签到状态显示 -->
+                  <div id="signedInArea" class="hidden flex gap-2 w-full lg:w-auto items-center">
+                     <button
+                        onclick="showMyInfo()"
+                        class="flex-1 lg:flex-none whitespace-nowrap cursor-pointer px-6 py-3 rounded-xl bg-gradient-to-r from-red-700 to-red-800 border-2 border-gold-500/50 text-gold-100 font-bold shadow-lg transition-all hover:from-red-600 hover:to-red-700 active:scale-95 flex items-center gap-2"
+                     >
+                        <span>🎫</span> 查看我的签到信息
+                     </button>
+                     <button
+                        onclick="logoutLocal()"
+                        class="px-3 py-3 rounded-xl bg-black/20 text-red-300 hover:text-gold-200 border border-transparent hover:border-red-800 transition-all"
+                        title="清除本地缓存（如果签错人）"
+                     >
+                        ✕
+                     </button>
                   </div>
 
                   <!-- 右侧：统计 + 切换按钮 -->
@@ -781,11 +798,94 @@
           
           renderLayout();
           updateStats();
+          checkLocalLogin(); // Check cache after loading data
         } catch (err) {
           console.error(err);
           // Fallback or Alert?
           // alert("无法连接后台系统，请确保 node server.js 已运行");
         }
+      }
+
+      function checkLocalLogin() {
+         const cached = localStorage.getItem("myLotteryInfo");
+         const signInArea = document.getElementById("signInArea");
+         const signedInArea = document.getElementById("signedInArea");
+
+         if (cached) {
+            try {
+               const myInfo = JSON.parse(cached);
+               // Verify if this user is still in the signed-in list
+               let found = false;
+               
+               // Search in tables
+               state.tables.forEach(t => {
+                  t.seats.forEach(s => {
+                     if (s.used && s.name === myInfo.name) {
+                        found = true;
+                        // Update cache with latest info (in case label or seat changed)
+                        const freshInfo = {
+                           ...myInfo,
+                           tableId: t.id,
+                           seatId: s.role === 'leader' && s.name === '王总' ? 1 : (s.seatIndex || myInfo.seatId), // Simplified match
+                           // Actually we can just reconstruct from seat 's'
+                           // But 's' doesn't have tableId directly, 't' has it.
+                           // Let's just trust the name match for now and keep using cached or simple update.
+                           lotteryNumber: s.lottery_number,
+                           label: s.label
+                        };
+                        // More precise:
+                        const seatIdx = t.seats.indexOf(s) + 1;
+                        const updatedInfo = {
+                           name: s.name,
+                           role: s.role,
+                           group: s.group,
+                           tableId: t.id,
+                           seatId: seatIdx,
+                           lotteryNumber: s.lottery_number,
+                           label: s.label
+                        };
+                        localStorage.setItem("myLotteryInfo", JSON.stringify(updatedInfo));
+                     }
+                  });
+               });
+
+               if (found) {
+                  signInArea.classList.add("hidden");
+                  signedInArea.classList.remove("hidden");
+               } else {
+                  // Not found in server list (maybe reset), clear cache
+                  localStorage.removeItem("myLotteryInfo");
+                  signInArea.classList.remove("hidden");
+                  signedInArea.classList.add("hidden");
+               }
+            } catch (e) {
+               console.error("Cache parse error", e);
+               localStorage.removeItem("myLotteryInfo");
+               signInArea.classList.remove("hidden");
+               signedInArea.classList.add("hidden");
+            }
+         } else {
+            signInArea.classList.remove("hidden");
+            signedInArea.classList.add("hidden");
+         }
+      }
+
+      function showMyInfo() {
+         const cached = localStorage.getItem("myLotteryInfo");
+         if (cached) {
+            const info = JSON.parse(cached);
+            showOverlay(
+               `🎉 ${info.name} 签到成功`,
+               `座位：${info.tableId}号桌 \n抽奖号：${info.lotteryNumber}\n${info.label}`
+            );
+         }
+      }
+
+      function logoutLocal() {
+         if(confirm("确定要清除本地签到缓存吗？\n(不会删除服务器数据，仅用于切换用户)")) {
+            localStorage.removeItem("myLotteryInfo");
+            checkLocalLogin();
+         }
       }
 
       async function fetchRoster() {
@@ -847,6 +947,37 @@
           
           const result = await res.json();
           if (!res.ok) {
+            // Auto-recovery if already signed in
+            if (res.status === 400 && result.error && result.error.includes("已签到")) {
+               let foundSeat = null;
+               let foundTable = null;
+               
+               state.tables.forEach(t => {
+                  t.seats.forEach(s => {
+                     if (s.used && s.name === name) {
+                        foundSeat = s;
+                        foundTable = t;
+                     }
+                  });
+               });
+
+               if (foundSeat) {
+                  const recoveryData = {
+                     name: foundSeat.name,
+                     role: foundSeat.role,
+                     group: foundSeat.group,
+                     tableId: foundTable.id,
+                     seatId: foundTable.seats.indexOf(foundSeat) + 1,
+                     lotteryNumber: foundSeat.lottery_number,
+                     label: foundSeat.label
+                  };
+                  localStorage.setItem("myLotteryInfo", JSON.stringify(recoveryData));
+                  checkLocalLogin();
+                  alert("检测到您已签到，已自动恢复状态！");
+                  return;
+               }
+            }
+
             alert(result.error || "签到失败");
             return;
           }
@@ -854,10 +985,13 @@
           // Success
           const { tableId, seatId, lotteryNumber, label, role } = result.data;
           
+          // Save to LocalStorage
+          localStorage.setItem("myLotteryInfo", JSON.stringify(result.data));
+
           // Show Overlay
           showOverlay(
             `🎉 ${result.data.name} 签到成功`,
-            `座位：${tableId}号桌 - ${seatId}号\n抽奖号：${lotteryNumber}\n${label}`
+            `座位：${tableId}号桌 \n抽奖号：${lotteryNumber}\n${label}`
           );
 
           // Clear Input
@@ -866,6 +1000,9 @@
           // Refresh Data
           await refreshData();
           await fetchRoster();
+          
+          // Trigger check to switch UI
+          checkLocalLogin();
 
         } catch (err) {
           console.error(err);
