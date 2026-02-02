@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path'); // Add path module
 const { pool, initDB } = require('./database');
 
 const app = express();
@@ -8,6 +9,8 @@ const PORT = 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
+// Serve static files from current directory
+app.use(express.static(__dirname)); 
 
 // Initialize DB on startup
 initDB().then(() => {
