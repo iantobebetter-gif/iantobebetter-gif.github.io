@@ -172,18 +172,16 @@
       /* 圆桌座位布局 */
       .round-table-container {
         position: relative;
-        width: 380px;
-        /* 增大容器宽度 */
-        height: 380px;
-        /* 增大容器高度 */
-        margin: 20px auto;
+        width: 240px; /* Reduced from 300 */
+        height: 240px; /* Reduced from 300 */
+        margin: 5px auto;
         transform-origin: center center;
       }
 
       @media (max-width: 480px) {
         .round-table-container {
-          transform: scale(0.8);
-          margin: -20px auto;
+          transform: scale(0.95); /* Slightly scale down on mobile if needed */
+          margin: 0 auto;
         }
       }
 
@@ -198,8 +196,8 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 130px;
-        height: 130px;
+        width: 80px; /* Reduced from 100 */
+        height: 80px; /* Reduced from 100 */
         border-radius: 50%;
         background: radial-gradient(circle, #78350f, #451a03);
         border: 4px solid #b45309;
@@ -213,15 +211,15 @@
 
       .seat-item {
         position: absolute;
-        width: 64px;
-        height: 64px;
+        width: 52px; /* Reduced from 64 */
+        height: 52px; /* Reduced from 64 */
         border-radius: 50%;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         transition: all 0.3s ease;
-        font-size: 11px;
+        font-size: 10px; /* Reduced font */
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
         z-index: 5;
         text-align: center;
@@ -298,10 +296,10 @@
       </div>
     </header>
 
-    <main class="pt-32 pb-16 px-4">
+    <main class="pt-24 pb-4 px-4 h-screen flex flex-col overflow-hidden">
       <section
         id="setupSection"
-        class="mx-auto max-w-5xl rounded-2xl card-border p-8"
+        class="mx-auto max-w-5xl rounded-2xl card-border p-8 overflow-y-auto custom-scrollbar"
       >
         <div class="absolute -top-6 left-1/2 transform -translate-x-1/2">
           <div
@@ -440,12 +438,12 @@
         ></p>
       </section>
 
-      <section id="drawSection" class="hidden mx-auto max-w-[98vw] 2xl:max-w-[1800px] mt-4">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <section id="drawSection" class="hidden mx-auto w-full max-w-[98vw] 2xl:max-w-[1800px] mt-4 flex-1 flex flex-col overflow-hidden">
+        <div class="flex flex-col lg:grid lg:grid-cols-12 gap-4 h-full overflow-hidden">
           <!-- 左侧：待签到墙 -->
 
           <div
-            class="order-2 lg:order-1 lg:col-span-3 rounded-2xl card-border p-0 overflow-hidden flex flex-col h-[50vh] lg:h-[calc(100vh-160px)]"
+            class="order-2 lg:order-1 lg:col-span-3 rounded-2xl card-border p-0 overflow-hidden flex flex-col flex-1 lg:h-full min-h-0"
           >
             <div
               class="bg-red-800/80 p-2 lg:p-4 text-center border-b-2 border-gold-500/30 flex justify-between items-center"
@@ -503,36 +501,29 @@
 
           <!-- 中间：控制区 -->
 
-          <div class="order-1 lg:order-2 lg:col-span-9 flex flex-col h-auto lg:h-[calc(100vh-160px)]">
+          <div class="order-1 lg:order-2 lg:col-span-9 flex flex-col h-auto lg:h-full min-h-0">
             <div
-              class="rounded-2xl card-border p-6 mb-4 bg-gradient-to-r from-red-900 to-red-800 shrink-0"
+              class="rounded-2xl card-border p-4 lg:p-6 mb-2 lg:mb-4 bg-gradient-to-r from-red-900 to-red-800 shrink-0"
             >
-              <div class="flex flex-wrap items-center justify-between gap-6">
-                <div class="flex gap-4">
+              <div class="flex flex-wrap items-center justify-between gap-4 lg:gap-6">
+                <div class="flex gap-2 w-full lg:w-auto">
+                  <input
+                    type="text"
+                    id="nameInput"
+                    list="name-suggestions"
+                    placeholder="请输入姓名"
+                    class="flex-1 lg:w-64 rounded-xl bg-red-950/50 border-2 border-red-800 text-gold-100 px-4 py-3 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all placeholder-red-400/50 text-lg"
+                    onkeydown="if(event.key === 'Enter') handleSignIn()"
+                  />
+                  <datalist id="name-suggestions">
+                    <!-- Dynamic -->
+                  </datalist>
                   <button
-                    id="drawLeaderBtn"
-                    class="group relative cursor-pointer px-8 py-3 rounded-xl bg-red-700 border-2 border-gold-600 text-gold-100 font-bold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 overflow-hidden"
+                    id="signInBtn"
+                    onclick="handleSignIn()"
+                    class="whitespace-nowrap cursor-pointer px-6 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 border-2 border-gold-300 text-red-900 font-bold shadow-lg transition-all hover:from-gold-400 hover:to-gold-500 active:scale-95"
                   >
-                    <span class="relative z-10 flex items-center gap-2 text-lg"
-                      >🦁 领导签到</span
-                    >
-
-                    <div
-                      class="absolute inset-0 bg-gold-400/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"
-                    ></div>
-                  </button>
-
-                  <button
-                    id="drawEmployeeBtn"
-                    class="group relative cursor-pointer px-8 py-3 rounded-xl bg-gold-600 border-2 border-gold-300 text-red-900 font-bold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gold-500 overflow-hidden"
-                  >
-                    <span class="relative z-10 flex items-center gap-2 text-lg"
-                      >🐴 员工签到</span
-                    >
-
-                    <div
-                      class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"
-                    ></div>
+                    签到
                   </button>
                 </div>
 
@@ -558,24 +549,14 @@
 
               <div
                 id="selectionHint"
-                class="mt-6 p-4 bg-gold-900/30 rounded-xl border border-gold-500/50 text-center hidden animate-[pulse_2s_infinite]"
+                class="hidden"
               >
-                <span class="text-gold-200 text-lg">当前选中：</span>
-
-                <span
-                  id="selectedNameDisplay"
-                  class="text-4xl font-black text-gold-100 mx-4 drop-shadow-md"
-                ></span>
-
-                <span class="text-sm text-gold-300/80"
-                  >（请点击上方对应按钮开始抽签）</span
-                >
               </div>
             </div>
 
             <div
               id="layout"
-              class="hidden lg:grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 lg:overflow-y-auto pr-2 custom-scrollbar lg:flex-1 pb-8"
+              class="hidden lg:grid grid-cols-2 gap-4 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-8 min-h-0"
             ></div>
           </div>
         </div>
@@ -742,200 +723,281 @@
         "祝你马首是瞻",
       ];
 
-      const defaultLeaders = ["张总", "李总", "王总", "赵总"]; // 新的分组数据
+      // Backend URL
+      const API_URL = "http://localhost:3000/api";
+      
+      let state = {
+        config: {},
+        tables: [],
+        stats: { total: 0, signedIn: 0, remaining: 0 },
+        leadersRemain: [],
+        employeesRemain: [],
+        finished: false
+      };
+      
+      let rosterData = { leaders: [], groups: {} };
+      let currentRosterTab = "all"; 
+      let isLayoutVisible = false;
 
-      const defaultGroup2 = [
-        "王建国",
-        "李建军",
-        "张伟",
-        "王伟",
-        "李娜",
-        "王芳",
-        "李静",
-        "王静",
-      ];
-      const defaultGroup4 = [
-        "张强",
-        "王强",
-        "李强",
-        "刘伟",
-        "刘洋",
-        "王洋",
-        "李洋",
-        "张洋",
-        "赵军",
-        "孙军",
-        "李军",
-        "王军",
-      ];
-      const defaultGroup5 = [
-        "张军",
-        "刘军",
-        "陈军",
-        "杨军",
-        "赵强",
-        "孙强",
-        "钱伟",
-        "周伟",
-        "吴伟",
-        "郑伟",
-        "王磊",
-        "李磊",
-      ];
-
-      function switchTab(group) {
-        ["group2", "group4", "group5"].forEach((g) => {
-          const btn = document.getElementById(`tab-${g}`);
-          const area = document.getElementById(`${g}Names`);
-          if (g === group) {
-            btn.classList.remove("text-red-300", "hover:bg-red-800/50");
-            btn.classList.add("bg-red-600", "text-white", "shadow-lg");
-            area.classList.remove("hidden");
-          } else {
-            btn.classList.add("text-red-300", "hover:bg-red-800/50");
-            btn.classList.remove("bg-red-600", "text-white", "shadow-lg");
-            area.classList.add("hidden");
-          }
-        });
-      } // 初始化时填充默认名单
-
-      document.addEventListener("DOMContentLoaded", () => {
-        if (!loadState()) {
-          document.getElementById("leaderNames").value =
-            defaultLeaders.join("\n");
-          document.getElementById("group2Names").value =
-            defaultGroup2.join("\n");
-          document.getElementById("group4Names").value =
-            defaultGroup4.join("\n");
-          document.getElementById("group5Names").value =
-            defaultGroup5.join("\n");
-        }
+      // Init
+      document.addEventListener("DOMContentLoaded", async () => {
+        // Hide setup form, show main interface directly (assuming backend handles config)
+        document.getElementById("setupSection").classList.add("hidden");
+        document.getElementById("drawSection").classList.remove("hidden");
+        document.getElementById("endGameBtn").classList.remove("hidden");
+        
+        await refreshData();
+        await fetchRoster();
       });
 
-      const storeKey = "seatGameStateV4"; // Version bump
-      let state = null;
-      let selectedPerson = null; // 当前选中的待抽签人
-
-      function freshState(cfg) {
-        const tables = Array.from({ length: cfg.tableCount }, () => ({
-          seats: Array.from({ length: cfg.seatsPerTable }, () => ({
-            used: false,
-            label: "待定",
-            role: "",
-            name: "",
-            group: "",
-          })),
-          leaders: 0,
-          employees: 0,
-        }));
-        return {
-          cfg,
-          tables,
-          leadersRemain: cfg.leaderNames, // 员工改为对象数组结构 { name, group }
-          employeesRemain: [
-            ...cfg.group2Names.map((n) => ({ name: n, group: "二团" })),
-            ...cfg.group4Names.map((n) => ({ name: n, group: "四团" })),
-            ...cfg.group5Names.map((n) => ({ name: n, group: "五团" })),
-          ],
-          blessingIdx: 0,
-          finished: false,
-        };
-      }
-
-      function saveState() {
-        localStorage.setItem(storeKey, JSON.stringify(state));
-      }
-
-      function loadState() {
-        const raw = localStorage.getItem(storeKey);
-        if (!raw) return null;
+      async function refreshData() {
         try {
-          return JSON.parse(raw);
-        } catch {
-          return null;
+          const res = await fetch(`${API_URL}/init`);
+          if (!res.ok) throw new Error("Failed to init");
+          const data = await res.json();
+          
+          state.config = data.config;
+          state.tables = data.tables;
+          state.stats = data.stats;
+          
+          renderLayout();
+          updateStats();
+        } catch (err) {
+          console.error(err);
+          // Fallback or Alert?
+          // alert("无法连接后台系统，请确保 node server.js 已运行");
         }
       }
 
-      function clearState() {
-        localStorage.removeItem(storeKey);
-        state = null;
-        selectedPerson = null;
-      }
-
-      function chooseTable(role) {
-        const cap = state.cfg.seatsPerTable;
-        const candidates = state.tables
-          .map((t, i) => ({
-            i,
-            leaders: t.leaders,
-            employees: t.employees,
-            total: t.leaders + t.employees,
-            free: t.seats.filter((s) => !s.used).length,
-          }))
-          .filter((x) => x.total < cap && x.free > 0);
-        if (candidates.length === 0) return -1; // 随机性增强
-
-        if (role === "leader") {
-          const minLead = Math.min(...candidates.map((c) => c.leaders));
-          const step1 = candidates.filter((c) => c.leaders === minLead);
-          const minTotal = Math.min(...step1.map((c) => c.total));
-          const step2 = step1.filter((c) => c.total === minTotal);
-          return step2[Math.floor(Math.random() * step2.length)].i;
-        } else {
-          const minEmp = Math.min(...candidates.map((c) => c.employees));
-          const step1 = candidates.filter((c) => c.employees === minEmp);
-          const minTotal = Math.min(...step1.map((c) => c.total));
-          const step2 = step1.filter((c) => c.total === minTotal);
-          return step2[Math.floor(Math.random() * step2.length)].i;
+      async function fetchRoster() {
+        try {
+          const res = await fetch(`${API_URL}/roster`);
+          if (!res.ok) throw new Error("Failed to fetch roster");
+          rosterData = await res.json();
+          renderRoster();
+          // updateSuggestions(); // Removed initial call, now driven by input event
+        } catch (err) {
+          console.error(err);
         }
       }
 
-      function assign(role, name, group = "") {
-        const tableIndex = chooseTable(role);
-        if (tableIndex < 0) return { ok: false, reason: "座位已满" };
-        const t = state.tables[tableIndex];
-        const seatIndex = t.seats.findIndex((s) => !s.used);
-        if (seatIndex < 0) return { ok: false, reason: "座位已满" };
+      function updateSuggestions() {
+        const input = document.getElementById("nameInput");
+        const val = input.value.trim();
+        const dl = document.getElementById("name-suggestions");
+        dl.innerHTML = "";
+        
+        if (!val) return;
 
-        const label = fourBless[state.blessingIdx % fourBless.length];
-        state.blessingIdx += 1;
+        const allNames = [];
+        if(rosterData.leaders) rosterData.leaders.forEach(u => allNames.push(u.name));
+        if(rosterData.groups) {
+          Object.values(rosterData.groups).forEach(arr => arr.forEach(u => allNames.push(u.name)));
+        }
+        
+        // Filter and limit to 3
+        const matches = allNames.filter(n => n.includes(val)).slice(0, 3);
+        
+        matches.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          dl.appendChild(opt);
+        });
+      }
 
-        t.seats[seatIndex] = { used: true, label, role, name, group };
+      // Add input listener
+      document.getElementById("nameInput").addEventListener("input", updateSuggestions);
 
-        if (role === "leader") {
-          t.leaders += 1;
-          state.leadersRemain = state.leadersRemain.filter((n) => n !== name);
-        } else {
-          t.employees += 1;
-          state.employeesRemain = state.employeesRemain.filter(
-            (p) => p.name !== name,
+      function updateStats() {
+        const el = document.getElementById("remainingLabel");
+        if (el) el.textContent = `剩余未签到：${state.stats.remaining} 人`;
+      }
+
+      // Handle Sign In (Input + Button)
+      async function handleSignIn() {
+        const input = document.getElementById("nameInput");
+        const name = input.value.trim();
+        if (!name) return;
+
+        try {
+          const res = await fetch(`${API_URL}/signin`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name })
+          });
+          
+          const result = await res.json();
+          if (!res.ok) {
+            alert(result.error || "签到失败");
+            return;
+          }
+
+          // Success
+          const { tableId, seatId, lotteryNumber, label, role } = result.data;
+          
+          // Show Overlay
+          showOverlay(
+            `🎉 ${result.data.name} 签到成功`,
+            `座位：${tableId}号桌 - ${seatId}号\n抽奖号：${lotteryNumber}\n${label}`
           );
+
+          // Clear Input
+          input.value = "";
+          
+          // Refresh Data
+          await refreshData();
+          await fetchRoster();
+
+        } catch (err) {
+          console.error(err);
+          alert("系统错误");
         }
-
-        if (
-          state.leadersRemain.length === 0 &&
-          state.employeesRemain.length === 0
-        )
-          state.finished = true;
-
-        saveState();
-        return { ok: true, tableIndex, label };
       }
 
-      let currentRosterTab = "all"; // 'all', 'leader', 'group2', 'group4', 'group5'
-      let isLayoutVisible = false; // Mobile layout visibility
+      // ---------------- Roster Tree View ----------------
+      function renderRoster() {
+        const list = document.getElementById("rosterList");
+        list.innerHTML = "";
+        
+        // Helper: Create Details/Summary Tree
+        const createTreeItem = (title, count, children, isOpen = true) => {
+           const details = document.createElement("details");
+           if (isOpen) details.open = true;
+           details.className = "group border border-gold-900/30 rounded-lg bg-red-900/20 overflow-hidden mb-2";
+           
+           const summary = document.createElement("summary");
+           summary.className = "cursor-pointer p-3 bg-red-900/50 hover:bg-red-800/60 font-bold text-gold-300 flex justify-between items-center select-none transition-colors";
+           summary.innerHTML = `<span>${title}</span> <span class="text-xs bg-black/20 px-2 py-0.5 rounded-full text-gold-500">${count}</span>`;
+           
+           const content = document.createElement("div");
+           content.className = "p-2 grid grid-cols-3 gap-2 bg-black/10";
+           
+           children.forEach(u => {
+             const span = document.createElement("span");
+             span.className = "text-sm text-gold-100/80 bg-red-950/40 px-2 py-1 rounded text-center truncate cursor-pointer hover:text-white hover:bg-red-800/50 transition-colors";
+             span.textContent = u.name;
+             // Optional: click name to auto-fill input
+             span.onclick = () => {
+                document.getElementById("nameInput").value = u.name;
+             };
+             content.appendChild(span);
+           });
+           
+           details.appendChild(summary);
+           details.appendChild(content);
+           return details;
+        };
 
+        const shouldShow = (tab) => currentRosterTab === "all" || currentRosterTab === tab;
+
+        // Leaders
+        if (shouldShow("leader") && rosterData.leaders && rosterData.leaders.length > 0) {
+          list.appendChild(createTreeItem("🦁 领导组", rosterData.leaders.length, rosterData.leaders));
+        }
+
+        // Groups
+        if (rosterData.groups) {
+          // Map backend group names to tabs if needed, or just iterate
+          // Assuming keys are "二团", "四团", "五团" etc.
+          Object.keys(rosterData.groups).forEach(gName => {
+             // Filter logic
+             let tabKey = "all";
+             if (gName.includes("二")) tabKey = "group2";
+             else if (gName.includes("四")) tabKey = "group4";
+             else if (gName.includes("五")) tabKey = "group5";
+             
+             if (shouldShow(tabKey)) {
+                list.appendChild(createTreeItem(`🐴 ${gName}`, rosterData.groups[gName].length, rosterData.groups[gName]));
+             }
+          });
+        }
+      }
+
+      // ---------------- Layout Rendering (Updated for Lottery Number) ----------------
+      function renderLayout() {
+        const container = document.getElementById("layout");
+        container.innerHTML = "";
+        
+        state.tables.forEach((t) => {
+          // ... (Card creation same as before) ...
+          const card = document.createElement("div");
+          card.className = "rounded-2xl card-border p-5 bg-red-900/40 backdrop-blur-sm hover:transform hover:scale-[1.01] transition-transform duration-300";
+          
+          const title = document.createElement("div");
+          title.className = "flex items-center justify-between mb-2 pb-3 border-b-2 border-gold-500/20";
+          title.innerHTML = `
+            <h4 class="text-2xl font-black text-gold-300 flex items-center gap-2">
+               <span class="text-3xl">🧧</span> 圆桌 ${t.id}
+            </h4>
+            <span class="px-3 py-1 rounded-full bg-black/20 text-sm font-bold text-gold-400 border border-gold-500/20">
+               ${t.seats.filter(s => s.used).length}/${t.seats.length} 人
+            </span>
+          `;
+          card.appendChild(title);
+
+          const tableContainer = document.createElement("div");
+          tableContainer.className = "round-table-container";
+          
+          const roundTable = document.createElement("div");
+          roundTable.className = "round-table";
+          roundTable.innerHTML = `<div class="text-gold-200 font-black text-xl">桌 ${t.id}</div>`;
+          tableContainer.appendChild(roundTable);
+
+          // Render Seats
+          const totalSeats = t.seats.length;
+          const radius = 90; // Reduced from 110
+          const centerX = 120; // Half of 240
+          const centerY = 120; // Half of 240
+          const startAngle = -90 * (Math.PI / 180);
+
+          t.seats.forEach((s, idx) => {
+            const angle = startAngle + idx * ((2 * Math.PI) / totalSeats);
+            const x = centerX + radius * Math.cos(angle) - 26; // Half of 52
+            const y = centerY + radius * Math.sin(angle) - 26;
+
+            const seat = document.createElement("div");
+            seat.className = `seat-item ${s.used ? "occupied" : "empty"} ${s.role === "leader" ? "leader" : ""}`;
+            seat.style.left = `${x}px`;
+            seat.style.top = `${y}px`;
+
+            if (s.used) {
+              // Name
+              const nameDiv = document.createElement("div");
+              nameDiv.className = "font-black leading-none truncate w-full px-0.5 text-[13px]";
+              nameDiv.textContent = s.name;
+              seat.appendChild(nameDiv);
+              
+              // Lottery Number (New)
+              if (s.lottery_number) {
+                 const lotDiv = document.createElement("div");
+                 lotDiv.className = "text-[11px] font-mono text-white bg-black/30 rounded px-1 mt-0.5";
+                 lotDiv.textContent = s.lottery_number;
+                 seat.appendChild(lotDiv);
+              }
+
+              // Label
+              const blessDiv = document.createElement("div");
+              blessDiv.className = "text-[9px] text-gold-200 mt-0.5 font-bold tracking-tight w-full px-0.5 truncate scale-95 origin-center";
+              blessDiv.textContent = s.label || "";
+              seat.appendChild(blessDiv);
+            } else {
+              seat.textContent = idx + 1;
+            }
+            tableContainer.appendChild(seat);
+          });
+
+          card.appendChild(tableContainer);
+          container.appendChild(card);
+        });
+      }
+
+      // Keep UI helpers
       function switchRosterTab(tab) {
         currentRosterTab = tab;
-        // Update tab styles
         ["all", "leader", "group2", "group4", "group5"].forEach((t) => {
           const btn = document.getElementById(`rtab-${t}`);
-          if (t === tab) {
-            btn.className =
-              "px-2 py-1 rounded bg-gold-500 text-red-900 font-bold";
-          } else {
-            btn.className = "px-2 py-1 rounded bg-red-900/50 text-gold-400";
-          }
+          if (t === tab) btn.className = "px-2 py-1 rounded bg-gold-500 text-red-900 font-bold";
+          else btn.className = "px-2 py-1 rounded bg-red-900/50 text-gold-400";
         });
         renderRoster();
       }
@@ -944,13 +1006,11 @@
         isLayoutVisible = !isLayoutVisible;
         const layout = document.getElementById("layout");
         const btn = document.getElementById("toggleLayoutBtn");
-
         if (isLayoutVisible) {
           layout.classList.remove("hidden");
           btn.textContent = "隐藏圆桌";
           btn.classList.add("bg-gold-600", "text-red-900");
           btn.classList.remove("bg-red-700", "text-gold-100");
-          // Scroll to layout
           layout.scrollIntoView({ behavior: "smooth" });
         } else {
           layout.classList.add("hidden");
@@ -960,321 +1020,25 @@
         }
       }
 
-      function renderRoster() {
-        const list = document.getElementById("rosterList");
-        list.innerHTML = "";
-
-        const createSection = (title, items, role) => {
-          if (items.length === 0) return;
-          const section = document.createElement("div");
-          section.className = "mb-4 lg:mb-6";
-
-          const h = document.createElement("h4");
-          h.className =
-            "text-base lg:text-lg font-black text-gold-300 mb-2 sticky top-0 bg-red-800/95 py-1 lg:py-2 px-2 shadow-sm border-l-4 border-gold-500";
-          h.textContent = title + ` (${items.length})`;
-          section.appendChild(h);
-
-          const grid = document.createElement("div");
-          grid.className = "grid grid-cols-3 lg:grid-cols-2 gap-2 lg:gap-3"; // Mobile 3 cols, PC 2 cols
-          items.forEach((item) => {
-            const name = typeof item === "string" ? item : item.name;
-            const group = typeof item === "string" ? "" : item.group;
-
-            const btn = document.createElement("button");
-            btn.className = `relative overflow-hidden text-center lg:text-left px-1 py-2 lg:px-4 lg:py-3 rounded-lg border transition-all text-xs lg:text-sm font-bold shadow-sm group 
- ${
-   selectedPerson?.name === name
-     ? "bg-gold-500 text-red-900 border-gold-300 ring-2 ring-gold-200 scale-105"
-     : "bg-red-900/40 border-gold-900/30 text-gold-100 hover:bg-red-700 hover:border-gold-500/50"
- }`;
-
-            const content = document.createElement("div");
-            content.className =
-              "relative z-10 flex flex-col items-center lg:items-start";
-
-            const nameSpan = document.createElement("span");
-            nameSpan.textContent = name;
-            nameSpan.className = "text-sm lg:text-base";
-            content.appendChild(nameSpan);
-
-            if (group) {
-              const groupSpan = document.createElement("span");
-              groupSpan.textContent = group;
-              groupSpan.className = `text-[9px] lg:text-[10px] mt-0.5 lg:mt-1 px-1 py-0.5 rounded w-fit ${selectedPerson?.name === name ? "bg-red-800/20 text-red-900" : "bg-black/20 text-gold-400"}`;
-              content.appendChild(groupSpan);
-            }
-
-            btn.appendChild(content);
-            btn.onclick = () => selectPerson(name, role, group);
-            grid.appendChild(btn);
-          });
-          section.appendChild(grid);
-          list.appendChild(section);
-        };
-
-        const shouldShow = (tabName) =>
-          currentRosterTab === "all" || currentRosterTab === tabName;
-
-        if (shouldShow("leader"))
-          createSection("🦁 领导组", state.leadersRemain, "leader");
-
-        const g2 = state.employeesRemain.filter((p) => p.group === "二团");
-        const g4 = state.employeesRemain.filter((p) => p.group === "四团");
-        const g5 = state.employeesRemain.filter((p) => p.group === "五团");
-
-        if (shouldShow("group2")) createSection("🐴 二团", g2, "employee");
-        if (shouldShow("group4")) createSection("🐴 四团", g4, "employee");
-        if (shouldShow("group5")) createSection("🐴 五团", g5, "employee");
-      }
-
-      function selectPerson(name, role, group) {
-        selectedPerson = { name, role, group };
-        renderRoster(); // update highlight
-        const hint = document.getElementById("selectionHint");
-        const display = document.getElementById("selectedNameDisplay");
-        hint.classList.remove("hidden");
-        display.textContent = name + (group ? `（${group}）` : ""); // Update buttons state
-
-        const dl = document.getElementById("drawLeaderBtn");
-        const de = document.getElementById("drawEmployeeBtn");
-
-        dl.disabled = role !== "leader";
-        de.disabled = role !== "employee";
-        dl.classList.toggle("opacity-50", dl.disabled);
-        de.classList.toggle("opacity-50", de.disabled);
-        dl.classList.toggle("cursor-not-allowed", dl.disabled);
-        de.classList.toggle("cursor-not-allowed", de.disabled);
-      }
-
-      function renderLayout() {
-        const container = document.getElementById("layout");
-        container.innerHTML = "";
-        state.tables.forEach((t, i) => {
-          const card = document.createElement("div");
-          card.className =
-            "rounded-2xl card-border p-5 bg-red-900/40 backdrop-blur-sm hover:transform hover:scale-[1.01] transition-transform duration-300";
-
-          const title = document.createElement("div");
-          title.className =
-            "flex items-center justify-between mb-2 pb-3 border-b-2 border-gold-500/20";
-
-          const h = document.createElement("h4");
-          h.className =
-            "text-2xl font-black text-gold-300 flex items-center gap-2";
-          h.innerHTML = `<span class="text-3xl">🧧</span> 圆桌 ${i + 1}`;
-
-          const sub = document.createElement("span");
-          sub.className =
-            "px-3 py-1 rounded-full bg-black/20 text-sm font-bold text-gold-400 border border-gold-500/20";
-          sub.textContent = `${t.seats.filter((s) => s.used).length}/${t.seats.length} 人`;
-
-          title.appendChild(h);
-          title.appendChild(sub);
-          card.appendChild(title); // 圆形布局容器
-
-          const tableContainer = document.createElement("div");
-          tableContainer.className = "round-table-container"; // 圆桌主体
-
-          const roundTable = document.createElement("div");
-          roundTable.className = "round-table";
-          const tableLabel = document.createElement("div");
-          tableLabel.className = "text-gold-200 font-black text-xl";
-          tableLabel.textContent = `桌 ${i + 1}`;
-          roundTable.appendChild(tableLabel);
-          tableContainer.appendChild(roundTable); // 计算座位坐标
-
-          const totalSeats = t.seats.length;
-          const radius = 145; // 增大半径 (原110)
-          const centerX = 190; // 容器中心X (380/2)
-          const centerY = 190; // 容器中心Y (380/2)
-          const startAngle = -90 * (Math.PI / 180); // 从上方开始
-
-          t.seats.forEach((s, idx) => {
-            const angle = startAngle + idx * ((2 * Math.PI) / totalSeats);
-            const x = centerX + radius * Math.cos(angle) - 32; // 32是座位宽度的一半(64/2)
-            const y = centerY + radius * Math.sin(angle) - 32;
-
-            const seat = document.createElement("div");
-            seat.className = `seat-item ${s.used ? "occupied" : "empty"} ${s.role === "leader" ? "leader" : ""}`;
-            seat.style.left = `${x}px`;
-            seat.style.top = `${y}px`;
-
-            if (s.used) {
-              const nameDiv = document.createElement("div");
-              nameDiv.className =
-                "font-black leading-none truncate w-full px-0.5 text-[13px]"; // 增大姓名 (原默认)
-              nameDiv.textContent = s.name;
-              seat.appendChild(nameDiv);
-              if (s.group) {
-                const groupDiv = document.createElement("div");
-                groupDiv.className =
-                  "text-[10px] font-bold opacity-90 mt-0.5 scale-95 origin-center"; // 增大部门 (原8px scale-90)
-                groupDiv.textContent = s.group;
-                seat.appendChild(groupDiv);
-              }
-              const blessDiv = document.createElement("div");
-              blessDiv.className =
-                "text-[9px] text-gold-200 mt-0.5 font-bold tracking-tight w-full px-0.5 truncate scale-95 origin-center"; // 增大祝福语 (原8px)
-              blessDiv.textContent = s.label;
-              seat.appendChild(blessDiv);
-            } else {
-              seat.textContent = idx + 1;
-            }
-
-            tableContainer.appendChild(seat);
-          });
-
-          card.appendChild(tableContainer);
-          container.appendChild(card);
-        });
-
-        const remaining = document.getElementById("remainingLabel");
-        remaining.textContent = `剩余未签到：${state.leadersRemain.length + state.employeesRemain.length} 人`;
-
-        renderRoster();
-      }
-
       function showOverlay(title, sub) {
         const ov = document.getElementById("overlay");
         const t = document.getElementById("overlayTitle");
         const s = document.getElementById("overlaySub");
         t.textContent = title;
-        s.textContent = sub;
-        ov.classList.remove("hidden"); // 金色 + 红色 + 橙色纸屑
-        confetti({
-          particleCount: 200,
-          spread: 120,
-          origin: { y: 0.6 },
-          colors: ["#fbbf24", "#dc2626", "#d97706", "#ffffff"],
-          gravity: 0.8,
-          scalar: 1.2,
-        });
+        s.innerText = sub; // allow \n
+        ov.classList.remove("hidden");
+        confetti({ particleCount: 200, spread: 120, origin: { y: 0.6 }, colors: ["#fbbf24", "#dc2626", "#d97706", "#ffffff"] });
       }
-
-      function closeOverlay() {
-        document.getElementById("overlay").classList.add("hidden");
-      }
-
-      function startGameFromForm(e) {
-        e.preventDefault();
-        const tableCount = parseInt(
-          document.getElementById("tableCount").value,
-          10,
-        );
-        const seatsPerTable = parseInt(
-          document.getElementById("seatsPerTable").value,
-          10,
-        ); // Parse names
-
-        const parse = (id) =>
-          document
-            .getElementById(id)
-            .value.split("\n")
-            .map((s) => s.trim())
-            .filter((s) => s);
-        const leaderNames = parse("leaderNames");
-        const group2Names = parse("group2Names");
-        const group4Names = parse("group4Names");
-        const group5Names = parse("group5Names");
-
-        const totalCap = tableCount * seatsPerTable;
-        const totalPeople =
-          leaderNames.length +
-          group2Names.length +
-          group4Names.length +
-          group5Names.length;
-        const hint = document.getElementById("setupHint");
-
-        if (tableCount < 1 || seatsPerTable < 1) {
-          hint.textContent = "请输入有效的圆桌数量与座位数";
-          return;
-        }
-        if (totalPeople < 1) {
-          hint.textContent = "请至少录入一位人员名单";
-          return;
-        }
-        if (totalPeople > totalCap) {
-          hint.textContent = `总人数（${totalPeople}）超过总座位数（${totalCap}），请增加圆桌或座位`;
-          return;
-        }
-
-        state = freshState({
-          tableCount,
-          seatsPerTable,
-          leaderNames,
-          group2Names,
-          group4Names,
-          group5Names,
-        });
-        saveState();
-
-        document.getElementById("setupSection").classList.add("hidden");
-        document.getElementById("drawSection").classList.remove("hidden");
-        document.getElementById("endGameBtn").classList.remove("hidden");
-        renderLayout();
-      }
-
-      function tryResume() {
-        const loaded = loadState();
-        if (loaded && !loaded.finished) {
-          state = loaded;
-          document.getElementById("setupSection").classList.add("hidden");
-          document.getElementById("drawSection").classList.remove("hidden");
-          document.getElementById("endGameBtn").classList.remove("hidden");
-          renderLayout();
-        }
-      }
-
-      function onDraw(role) {
-        if (!selectedPerson || selectedPerson.role !== role) {
-          alert(
-            "请先在左侧列表中选择要签到的" +
-              (role === "leader" ? "领导" : "员工"),
-          );
-          return;
-        }
-
-        const res = assign(role, selectedPerson.name, selectedPerson.group);
-        if (!res.ok) {
-          showOverlay("座位已满", "请终止游戏或调整参数");
-          return;
-        }
-        const idx = res.tableIndex + 1;
-        const bless =
-          horsePhrases[Math.floor(Math.random() * horsePhrases.length)];
-        showOverlay(`🎉 圆桌 ${idx}`, `${selectedPerson.name}，${bless}`);
-
-        selectedPerson = null;
-        document.getElementById("selectionHint").classList.add("hidden");
-        document.getElementById("drawLeaderBtn").disabled = true;
-        document.getElementById("drawLeaderBtn").classList.add("opacity-50");
-        document.getElementById("drawEmployeeBtn").disabled = true;
-        document.getElementById("drawEmployeeBtn").classList.add("opacity-50");
-
-        renderLayout();
-      }
-
-      document
-        .getElementById("setupForm")
-        .addEventListener("submit", startGameFromForm);
-      document
-        .getElementById("drawLeaderBtn")
-        .addEventListener("click", () => onDraw("leader"));
-      document
-        .getElementById("drawEmployeeBtn")
-        .addEventListener("click", () => onDraw("employee"));
-      document.getElementById("overlayClose").addEventListener("click", () => {
-        closeOverlay();
-      });
-      document.getElementById("endGameBtn").addEventListener("click", () => {
-        if (confirm("确定要终止当前游戏并清除所有数据吗？")) {
-          clearState();
-          location.reload();
-        }
+      
+      document.getElementById("overlayClose").addEventListener("click", () => document.getElementById("overlay").classList.add("hidden"));
+      
+      document.getElementById("endGameBtn").addEventListener("click", async () => {
+         if(confirm("确定要重置所有数据吗？此操作不可撤销！")) {
+            await fetch(`${API_URL}/reset`, { method: "POST" });
+            location.reload();
+         }
       });
 
-      tryResume();
     </script>
   </body>
 </html>
