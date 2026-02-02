@@ -9,8 +9,8 @@ const PORT = 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
-// Serve static files from current directory
-app.use(express.static(__dirname)); 
+// Serve static files from 'public' directory
+app.use(express.static(path.join(__dirname, 'public'))); 
 
 // Initialize DB on startup
 initDB().then(() => {

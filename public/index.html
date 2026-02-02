@@ -5,10 +5,9 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>研发二四五团年夜饭·鸿运圆桌抽签</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
+    <title>聚餐圆桌座位抽签</title>
+    <script src="/js/tailwindcss.js"></script>
+    <script src="/js/confetti.browser.min.js"></script>
     <script>
       tailwind.config = {
         theme: {
@@ -52,7 +51,7 @@
       rel="stylesheet"
     />
 
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="/js/confetti.browser.min.js"></script>
 
     <style>
       @keyframes lantern-swing {
@@ -502,45 +501,49 @@
             <div
               class="rounded-2xl card-border p-4 lg:p-6 mb-2 lg:mb-4 bg-gradient-to-r from-red-900 to-red-800 shrink-0"
             >
-              <div class="flex flex-wrap items-center justify-between gap-4 lg:gap-6">
-                <div class="flex gap-2 w-full lg:w-auto">
-                  <input
-                    type="text"
-                    id="nameInput"
-                    list="name-suggestions"
-                    placeholder="请输入姓名"
-                    class="flex-1 lg:w-64 rounded-xl bg-red-950/50 border-2 border-red-800 text-gold-100 px-4 py-3 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all placeholder-red-400/50 text-lg"
-                    onkeydown="if(event.key === 'Enter') handleSignIn()"
-                  />
-                  <datalist id="name-suggestions">
-                    <!-- Dynamic -->
-                  </datalist>
-                  <button
-                    id="signInBtn"
-                    onclick="handleSignIn()"
-                    class="whitespace-nowrap cursor-pointer px-6 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 border-2 border-gold-300 text-red-900 font-bold shadow-lg transition-all hover:from-gold-400 hover:to-gold-500 active:scale-95"
-                  >
-                    签到
-                  </button>
-                </div>
+              <div class="flex flex-col gap-4 w-full">
+                <!-- 顶部：控制栏 -->
+                <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+                  <!-- 左侧：输入框 + 签到按钮 -->
+                  <div class="flex gap-2 w-full lg:w-auto">
+                    <input
+                      type="text"
+                      id="nameInput"
+                      list="name-suggestions"
+                      placeholder="请输入姓名"
+                      class="flex-1 min-w-0 w-full lg:w-64 rounded-xl bg-red-950/50 border-2 border-red-800 text-gold-100 px-4 py-3 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition-all placeholder-red-400/50 text-lg"
+                      onkeydown="if(event.key === 'Enter') handleSignIn()"
+                    />
+                    <datalist id="name-suggestions">
+                      <!-- Dynamic -->
+                    </datalist>
+                    <button
+                      id="signInBtn"
+                      onclick="handleSignIn()"
+                      class="shrink-0 whitespace-nowrap cursor-pointer px-6 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 border-2 border-gold-300 text-red-900 font-bold shadow-lg transition-all hover:from-gold-400 hover:to-gold-500 active:scale-95"
+                    >
+                      签到
+                    </button>
+                  </div>
 
-                <div
-                  class="bg-black/20 px-4 py-2 rounded-lg border border-gold-500/30 flex items-center gap-2"
-                >
-                  <span
-                    id="remainingLabel"
-                    class="text-gold-200 font-bold text-lg"
-                  ></span>
-                  <!-- 移动端切换圆桌视图按钮 -->
-                  <button
-                    id="toggleLayoutBtn"
-                    class="lg:hidden px-3 py-1 bg-red-700 text-gold-100 rounded border border-gold-500/30 text-sm font-bold"
-                    onclick="toggleLayoutView()"
+                  <!-- 右侧：统计 + 切换按钮 -->
+                  <div
+                    class="flex items-center justify-between w-full lg:w-auto gap-2 bg-black/20 px-4 py-2 rounded-lg border border-gold-500/30"
                   >
-                    查看圆桌
-                  </button>
+                    <span
+                      id="remainingLabel"
+                      class="text-gold-200 font-bold text-lg"
+                    ></span>
+                    <!-- 移动端切换圆桌视图按钮 -->
+                    <button
+                      id="toggleLayoutBtn"
+                      class="lg:hidden px-3 py-1 bg-red-700 text-gold-100 rounded border border-gold-500/30 text-sm font-bold shrink-0"
+                      onclick="toggleLayoutView()"
+                    >
+                      查看圆桌
+                    </button>
+                  </div>
                 </div>
-              </div>
 
               <!-- 当前选中提示 -->
 
