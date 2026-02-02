@@ -1,0 +1,16 @@
+.DS_Store
+.trae/
+.agent/
+.claude/
+.codebuddy/
+.codex/
+.continue/
+.cursor/
+.gemini/
+.github/
+.kiro/
+.opencode/
+.qoder/
+.roo/
+.windsurf/
+node_modules/
