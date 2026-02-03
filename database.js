@@ -58,16 +58,33 @@ async function initDB() {
   const [rows] = await p.query('SELECT COUNT(*) as count FROM users');
   if (rows[0].count === 0) {
     console.log('Seeding default data...');
-    const defaultLeaders = ["张总", "李总", "王总", "赵总"];
-    const defaultGroup2 = ["王建国", "李建军", "张伟", "王伟", "李娜", "王芳", "李静", "王静"];
-    const defaultGroup4 = ["张强", "王强", "李强", "刘伟", "刘洋", "王洋", "李洋", "张洋", "赵军", "孙军", "李军", "王军"];
-    const defaultGroup5 = ["张军", "刘军", "陈军", "杨军", "赵强", "孙强", "钱伟", "周伟", "吴伟", "郑伟", "王磊", "李磊"];
+    
+    // 真实名单兜底
+    const defaultLeaders = ["王总", "卢总", "寿总", "黄总"];
+    
+    const defaultGroup2 = [
+      "倪丹", "鲁栋栋", "吴斐斐", "宋柯佳", "周华康", "张健", "周楚明", 
+      "李永富", "厉阳", "张伟", "龙志文", "栾明学", "康怿涵", "闫胜元"
+    ];
+    
+    const defaultGroup4 = [
+      "潘琰", "孔祥福", "陈骏宇", "傅承雄", "何林飞", "宋荣", "李泽州", 
+      "郑力玮", "贺思", "徐俊超", "王宇涵", "董银燕", "许忆恩"
+    ];
+    
+    const defaultGroup5 = [
+      "李杰", "罗进珮", "高燕煦", "金戈愉", "许楷文", "刘景力", "汪新涛", 
+      "李乐天", "马奕骏"
+    ];
+
+    const defaultGuests = ["叶剑", "郭凡玉", "孔冷", "陈峰"];
 
     const values = [];
     defaultLeaders.forEach(n => values.push([n, '领导组', 'leader']));
     defaultGroup2.forEach(n => values.push([n, '二团', 'employee']));
     defaultGroup4.forEach(n => values.push([n, '四团', 'employee']));
     defaultGroup5.forEach(n => values.push([n, '五团', 'employee']));
+    defaultGuests.forEach(n => values.push([n, '特邀嘉宾', 'employee']));
 
     await p.query('INSERT INTO users (name, group_name, role) VALUES ?', [values]);
   }
