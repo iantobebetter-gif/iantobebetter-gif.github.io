@@ -288,7 +288,8 @@ app.post('/api/signin', async (req, res) => {
 // 4. Reset
 app.post('/api/reset', async (req, res) => {
   try {
-    await pool.query('UPDATE users SET is_signed_in = FALSE, table_number = NULL, seat_number = NULL, lottery_number = NULL, seat_label = NULL');
+    // Reset everything: sign-in status, seat assignment, AND prizes
+    await pool.query('UPDATE users SET is_signed_in = FALSE, table_number = NULL, seat_number = NULL, lottery_number = NULL, seat_label = NULL, prize_level = NULL');
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

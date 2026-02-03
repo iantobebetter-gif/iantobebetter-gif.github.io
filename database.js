@@ -36,6 +36,7 @@ async function initDB() {
       seat_number INT DEFAULT NULL,
       lottery_number VARCHAR(20) DEFAULT NULL,
       seat_label VARCHAR(50) DEFAULT NULL,
+      prize_level VARCHAR(20) DEFAULT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
