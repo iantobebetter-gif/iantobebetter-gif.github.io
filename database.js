@@ -51,7 +51,7 @@ async function initDB() {
 
   // Insert default config if not exists
   await p.query(`
-    INSERT IGNORE INTO config (id, table_count, seats_per_table) VALUES (1, 4, 8)
+    INSERT IGNORE INTO config (id, table_count, seats_per_table) VALUES (1, 4, 11)
   `);
   
   // Seed initial data if empty

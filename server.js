@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path'); // Add path module
+const ExcelJS = require('exceljs'); // Add exceljs
 const { pool, initDB } = require('./database');
 
 const app = express();
@@ -288,6 +289,123 @@ app.post('/api/signin', async (req, res) => {
 app.post('/api/reset', async (req, res) => {
   try {
     await pool.query('UPDATE users SET is_signed_in = FALSE, table_number = NULL, seat_number = NULL, lottery_number = NULL, seat_label = NULL');
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ------------------------------------------------------------
+// Export API
+// ------------------------------------------------------------
+app.get('/api/export/excel', async (req, res) => {
+  try {
+    const [users] = await pool.query('SELECT lottery_number as uid, name, group_name as department, seat_label as identity FROM users WHERE is_signed_in = TRUE');
+    
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('签到名单');
+
+    worksheet.columns = [
+      { header: 'uid', key: 'uid', width: 15 },
+      { header: 'name', key: 'name', width: 15 },
+      { header: 'avatar', key: 'avatar', width: 10 },
+      { header: 'department', key: 'department', width: 20 },
+      { header: 'identity', key: 'identity', width: 25 },
+    ];
+
+    users.forEach(u => {
+      worksheet.addRow({
+        uid: u.uid || '',
+        name: u.name,
+        avatar: '', // Empty as requested, or placeholder
+        department: u.department,
+        identity: u.identity || ''
+      });
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=users.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Export failed');
+  }
+});
+
+// ------------------------------------------------------------
+// Lottery APIs
+// ------------------------------------------------------------
+
+// Get candidates (signed in but no prize)
+app.get('/api/lottery/candidates', async (req, res) => {
+  try {
+    // Candidates must be signed in AND have no prize yet
+    const [rows] = await pool.query('SELECT id, name, group_name, role, lottery_number FROM users WHERE is_signed_in = TRUE AND prize_level IS NULL');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Draw winners
+app.post('/api/lottery/draw', async (req, res) => {
+  const { level, count } = req.body;
+  // level: '一等奖', '二等奖', '三等奖'
+  // count: number to draw
+  
+  if (!level || !count || count <= 0) {
+    return res.status(400).json({ error: 'Invalid parameters' });
+  }
+
+  try {
+    // 1. Get candidates again to be safe
+    // Include lottery_number in the selection
+    const [candidates] = await pool.query('SELECT id, name, group_name, lottery_number FROM users WHERE is_signed_in = TRUE AND prize_level IS NULL');
+    
+    if (candidates.length < count) {
+      return res.status(400).json({ error: `奖池人数不足！当前仅剩 ${candidates.length} 人，无法抽取 ${count} 人` });
+    }
+
+    // 2. Randomize
+    const winners = [];
+    const tempCandidates = [...candidates];
+    
+    for (let i = 0; i < count; i++) {
+      const idx = Math.floor(Math.random() * tempCandidates.length);
+      winners.push(tempCandidates[idx]);
+      tempCandidates.splice(idx, 1); // Remove used
+    }
+
+    // 3. Update DB
+    if (winners.length > 0) {
+      const ids = winners.map(w => w.id);
+      await pool.query('UPDATE users SET prize_level = ? WHERE id IN (?)', [level, ids]);
+    }
+
+    res.json({ winners });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get all winners
+app.get('/api/lottery/winners', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT name, prize_level FROM users WHERE prize_level IS NOT NULL ORDER BY FIELD(prize_level, "一等奖", "二等奖", "三等奖")');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Reset Lottery (Admin)
+app.post('/api/lottery/reset', async (req, res) => {
+  try {
+    await pool.query('UPDATE users SET prize_level = NULL');
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>幸运大抽奖</title>
+    <script src="/js/tailwindcss.js"></script>
+    <script src="/js/confetti.browser.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#9f1239",
+              gold: {
+                300: "#fcd34d",
+                500: "#f59e0b",
+                700: "#b45309",
+              },
+            },
+            fontFamily: {
+              serif: ['"Noto Serif SC"', "serif"],
+            },
+            animation: {
+              "pulse-fast": "pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            },
+          },
+        },
+      };
+    </script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background-color: #450a0a;
+        background-image:
+          radial-gradient(circle at 50% 0%, #991b1b, #450a0a),
+          url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23f59e0b" fill-opacity="0.1"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+      }
+      .text-shadow-gold {
+        text-shadow:
+          0 2px 4px rgba(0, 0, 0, 0.5),
+          0 0 20px rgba(251, 191, 36, 0.6);
+      }
+      .card-border {
+        background: rgba(127, 29, 29, 0.4);
+        box-shadow:
+          0 0 40px rgba(0, 0, 0, 0.6),
+          inset 0 0 40px rgba(251, 191, 36, 0.1);
+      }
+      /* 滚动名字动画效果 */
+      .rolling-item {
+        transition: transform 0.1s;
+      }
+
+      /* Lantern Animation */
+      @keyframes sway {
+        0% {
+          transform: rotate(-5deg);
+        }
+        50% {
+          transform: rotate(5deg);
+        }
+        100% {
+          transform: rotate(-5deg);
+        }
+      }
+      @keyframes pulseSlow {
+        0%,
+        100% {
+          transform: scale(1);
+          filter: brightness(1);
+          box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+        }
+        50% {
+          transform: scale(1.02);
+          filter: brightness(1.1);
+          box-shadow: 0 0 40px rgba(251, 191, 36, 0.8);
+        }
+      }
+      .animate-pulse-slow {
+        animation: pulseSlow 2s ease-in-out infinite;
+      }
+      .lantern {
+        position: fixed;
+        top: -10px;
+        width: 80px;
+        height: 100px;
+        background: radial-gradient(circle, #ef4444, #991b1b);
+        border-radius: 40px;
+        box-shadow: 0 10px 30px rgba(220, 38, 38, 0.6);
+        z-index: 20;
+        animation: sway 3s ease-in-out infinite;
+        border: 2px solid #fcd34d;
+      }
+      .lantern::before {
+        content: "";
+        position: absolute;
+        top: -10px;
+        left: 35px;
+        width: 10px;
+        height: 20px;
+        background: #fcd34d;
+        border-radius: 2px;
+      }
+      .lantern::after {
+        content: "福";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 40px;
+        font-weight: 900;
+        color: #fcd34d;
+        font-family: "Noto Serif SC", serif;
+      }
+      .lantern-tassel {
+        position: absolute;
+        bottom: -40px;
+        left: 35px;
+        width: 10px;
+        height: 40px;
+        background: #fcd34d;
+        border-radius: 5px;
+      }
+
+      /* Confetti overlay */
+      .confetti-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+        background-image: url('data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="2" cy="2" r="1" fill="%23fcd34d" fill-opacity="0.3"/%3E%3C/svg%3E');
+        opacity: 0.5;
+      }
+
+      /* Mac 浏览器兼容性修复 */
+      @media screen and (min-width: 768px) {
+        body {
+          height: 100vh;
+          overflow: hidden;
+        }
+        main {
+          /* Fix height calc to account for header/footer */
+          height: 100vh;
+          max-height: 100vh;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.1);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(180, 83, 9, 0.5);
+          border-radius: 3px;
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen text-orange-50 font-serif overflow-x-hidden">
+    <!-- Decorations -->
+    <div class="lantern left-10 delay-100">
+      <div class="lantern-tassel"></div>
+    </div>
+    <div class="lantern right-10 delay-300">
+      <div class="lantern-tassel"></div>
+    </div>
+    <div class="confetti-overlay"></div>
+
+    <!-- 顶部标题 -->
+    <header class="fixed top-6 z-30 w-full">
+      <div class="mx-auto max-w-7xl px-6">
+        <div
+          class="rounded-2xl bg-gradient-to-r from-red-900/80 via-red-800/80 to-red-900/80 backdrop-blur card-border px-6 py-4 flex items-center justify-between shadow-2xl border border-gold-500/30"
+        >
+          <div class="w-40 flex items-center gap-2">
+            <span class="text-3xl">🏮</span>
+          </div>
+          <h1
+            id="lotteryTitle"
+            class="text-2xl md:text-3xl font-black tracking-widest text-gold-300 select-none text-shadow-gold relative left-4"
+            style="margin: 0 auto"
+          >
+             研发二四五团："圆"聚新春·"抽"中鸿运
+          </h1>
+          <div
+            id="poolCount"
+            class="shrink-0 text-base md:text-700 text-gold-200 font-bold text-right ml-auto w-40 flex items-center justify-end gap-2"
+          >
+            <span>当前奖池人数:</span>
+            <span class="text-2xl text-gold-500">3</span>
+            <span>人</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 主体区域 -->
+    <main
+      class="pt-28 pb-20 px-6 h-screen w-full max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-stretch overflow-hidden"
+    >
+      <!-- 左侧：控制面板 -->
+      <div class="w-full md:w-1/3 flex flex-col gap-4 z-10 shrink-0 h-full">
+        <!-- 奖项选择卡片 -->
+        <div
+          class="flex-1 card-border rounded-2xl md:rounded-3xl p-5 md:p-8 flex flex-col gap-4 shadow-xl bg-red-900/30 backdrop-blur-sm border-2 border-gold-700/50"
+        >
+          <h2
+            class="text-2xl md:text-3xl font-black text-gold-300 border-b-2 border-gold-700/50 pb-3 text-center tracking-wider"
+          >
+            🏆 奖项设置
+          </h2>
+
+          <div class="flex-1 flex flex-col justify-center gap-4">
+            <button
+              onclick="selectLevel('三等奖', 8)"
+              id="btn-level3"
+              class="level-btn w-full p-4 rounded-xl border-2 border-gold-700/30 bg-red-900/50 hover:bg-red-800 transition-all text-left group"
+            >
+              <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                  <span class="text-2xl">🥉</span>
+                  <span class="text-2xl font-black text-gold-300">三等奖</span>
+                </div>
+                <span
+                  class="text-sm bg-black/30 px-3 py-1 rounded-full text-gold-500 font-bold border border-gold-900/50"
+                  >共8名</span
+                >
+              </div>
+              <div class="text-sm text-red-300 mt-2 pl-9 font-medium">
+                点击即可抽取 8 人
+              </div>
+            </button>
+
+            <button
+              onclick="selectLevel('二等奖', 8)"
+              id="btn-level2"
+              class="level-btn w-full p-4 rounded-xl border-2 border-gold-700/30 bg-red-900/50 hover:bg-red-800 transition-all text-left group"
+            >
+              <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                  <span class="text-2xl">🥈</span>
+                  <span class="text-2xl font-black text-gold-300">二等奖</span>
+                </div>
+                <span
+                  class="text-sm bg-black/30 px-3 py-1 rounded-full text-gold-500 font-bold border border-gold-900/50"
+                  >共8名</span
+                >
+              </div>
+              <div class="text-sm text-red-300 mt-2 pl-9 font-medium">
+                点击即可抽取 8 人
+              </div>
+            </button>
+
+            <button
+              onclick="selectLevel('一等奖', 6)"
+              id="btn-level1"
+              class="level-btn w-full p-4 rounded-xl border-2 border-gold-700/30 bg-red-900/50 hover:bg-red-800 transition-all text-left group"
+            >
+              <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                  <span class="text-2xl">🥇</span>
+                  <span class="text-2xl font-black text-gold-300">一等奖</span>
+                </div>
+                <span
+                  class="text-sm bg-black/30 px-3 py-1 rounded-full text-gold-500 font-bold border border-gold-900/50"
+                  >共6名</span
+                >
+              </div>
+              <div class="text-sm text-red-300 mt-2 pl-9 font-medium">
+                点击即可抽取 6 人
+              </div>
+            </button>
+          </div>
+
+          <!-- 开始抽奖按钮容器 -->
+          <div
+            class="mt-auto bg-black/20 rounded-xl p-4 border border-gold-700/30"
+          >
+            <input id="drawCount" type="hidden" value="8" />
+            <!-- Hidden input to store count -->
+            <button
+              id="actionBtn"
+              onclick="toggleLottery()"
+              class="w-full py-5 rounded-2xl bg-gradient-to-b from-gold-300 to-gold-600 text-red-950 font-black text-4xl shadow-[0_0_20px_rgba(251,191,36,0.6)] active:shadow-none active:translate-y-2 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed tracking-widest border-2 border-gold-200 ring-4 ring-red-900/50 animate-pulse-slow"
+            >
+              开始抽奖
+            </button>
+          </div>
+        </div>
+
+        <!-- 底部操作区 -->
+        <div class="flex flex-col gap-3 shrink-0">
+          <div
+            class="flex justify-center items-center px-2 pt-1 text-gold-500/60 text-xs md:text-sm font-medium"
+          >
+            <a
+              href="/"
+              class="hover:text-gold-300 flex items-center gap-1 transition-colors group"
+            >
+              <span class="group-hover:-translate-x-1 transition-transform"
+                >↩</span
+              >
+              返回签到页
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧：展示区域 -->
+      <div class="w-full md:w-2/3 flex flex-col h-full relative">
+        <!-- padding bottom aligns with left side buttons -->
+        <!-- 滚动显示区 -->
+        <div
+          class="flex-1 card-border rounded-2xl md:rounded-3xl p-8 flex items-center justify-center relative overflow-hidden bg-black/20 shadow-2xl backdrop-blur-sm border-2 border-gold-700/50"
+        >
+          <!-- 默认提示 -->
+          <div id="defaultTip" class="text-center">
+            <div class="text-6xl mb-4">🧧</div>
+            <div class="text-3xl text-gold-500/50 font-bold">
+              准备好，大奖即将揭晓
+            </div>
+          </div>
+
+          <!-- 滚动容器 -->
+          <div
+            id="rollingContainer"
+            class="hidden absolute inset-0 flex flex-wrap content-center justify-center gap-8 p-8"
+          >
+            <!-- 动态生成的名字卡片 -->
+          </div>
+
+          <!-- 结果容器 -->
+          <div
+            id="resultContainer"
+            class="hidden absolute inset-0 flex flex-col items-center justify-center p-8 z-20"
+          >
+            <h3
+              id="resultTitle"
+              class="text-4xl font-black text-gold-300 mb-8 drop-shadow-lg"
+            ></h3>
+            <div
+              id="resultList"
+              class="flex flex-wrap justify-center gap-6 w-full"
+            >
+              <!-- 结果卡片 -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 底部：中奖名单跑马灯 -->
+    <footer
+      class="fixed bottom-0 left-0 right-0 bg-red-950/90 border-t border-gold-700/30 py-3 z-50"
+    >
+      <div class="max-w-7xl mx-auto px-4 flex items-center gap-4">
+        <span class="text-gold-500 font-bold shrink-0">🏆 中奖榜单：</span>
+        <div class="flex-1 overflow-hidden relative h-8">
+          <div
+            id="ticker"
+            class="absolute whitespace-nowrap text-gold-200 font-bold text-lg animate-marquee"
+          >
+            暂无中奖信息...
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <style>
+      @keyframes marquee {
+        0% {
+          transform: translateX(100%);
+        }
+        100% {
+          transform: translateX(-100%);
+        }
+      }
+      .animate-marquee {
+        animation: marquee 20s linear infinite;
+      }
+      /* 结果卡片弹出动画 */
+      .pop-in {
+        animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        opacity: 0;
+        transform: scale(0.5);
+      }
+      @keyframes popIn {
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+    </style>
+
+    <script>
+      const API_URL = "/api/lottery";
+      let candidates = []; // {id, name, ...}
+      let isRolling = false;
+      let rollTimer = null;
+      let currentLevel = "三等奖";
+
+      // Init
+      document.addEventListener("DOMContentLoaded", async () => {
+        await fetchCandidates();
+        await fetchWinners();
+        selectLevel("三等奖", 8); // Default 8 for 3rd prize
+
+        // Hidden Reset Logic
+        const title = document.getElementById("lotteryTitle");
+        let titleClicks = 0;
+        let titleTimer = null;
+
+        title.style.cursor = "pointer";
+        title.addEventListener("click", () => {
+          titleClicks++;
+          if (titleTimer) clearTimeout(titleTimer);
+          titleTimer = setTimeout(() => { titleClicks = 0; }, 1000);
+
+          if (titleClicks >= 5) {
+            titleClicks = 0;
+            resetLottery();
+          }
+        });
+      });
+
+      async function fetchCandidates() {
+        try {
+          const res = await fetch(`${API_URL}/candidates`);
+          candidates = await res.json();
+          document.getElementById("poolCount").textContent =
+            `当前奖池人数：${candidates.length} 人`;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function fetchWinners() {
+        try {
+          const res = await fetch(`${API_URL}/winners`);
+          const winners = await res.json();
+          const ticker = document.getElementById("ticker");
+          if (winners.length > 0) {
+            ticker.textContent = winners
+              .map((w) => `[${w.prize_level}] ${w.name}`)
+              .join("   ✦   ");
+            ticker.style.animationDuration = `${Math.max(10, winners.length * 3)}s`;
+          } else {
+            ticker.textContent = "暂无中奖信息，大奖虚位以待！";
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function resetLottery() {
+        if (!confirm("确认重置所有抽奖结果吗?")) {
+          return;
+        }
+        try {
+          const res = await fetch(`${API_URL}/reset`, { method: "POST" });
+          if (!res.ok) {
+            console.error("Reset failed");
+            return;
+          }
+          // Quietly refresh
+          await fetchCandidates();
+          await fetchWinners();
+          console.log("Lottery reset successful");
+        } catch (e) {
+          console.error("Network error during reset", e);
+        }
+      }
+
+      function selectLevel(level, defaultCount) {
+        if (isRolling) return;
+        currentLevel = level;
+        document.getElementById("drawCount").value = defaultCount;
+
+        // UI Active State
+        document.querySelectorAll(".level-btn").forEach((btn) => {
+          btn.classList.remove("border-gold-500", "bg-red-800");
+          btn.classList.add("border-gold-700/30", "bg-red-900/50");
+        });
+
+        let btnId = "";
+        if (level === "一等奖") btnId = "btn-level1";
+        if (level === "二等奖") btnId = "btn-level2";
+        if (level === "三等奖") btnId = "btn-level3";
+
+        const btn = document.getElementById(btnId);
+        if (btn) {
+          btn.classList.remove("border-gold-700/30", "bg-red-900/50");
+          btn.classList.add("border-gold-500", "bg-red-800");
+        }
+      }
+
+      function toggleLottery() {
+        const btn = document.getElementById("actionBtn");
+        const count = parseInt(document.getElementById("drawCount").value);
+
+        if (!isRolling) {
+          // Start Rolling
+          if (candidates.length < count) {
+            alert(`奖池人数不足！仅剩 ${candidates.length} 人`);
+            return;
+          }
+
+          isRolling = true;
+          btn.textContent = "停 止";
+          btn.classList.remove(
+            "from-gold-300",
+            "to-gold-600",
+            "animate-pulse-slow",
+            "shadow-[0_0_20px_rgba(251,191,36,0.6)]",
+          );
+          btn.classList.add("from-red-500", "to-red-700", "text-white");
+
+          document.getElementById("defaultTip").classList.add("hidden");
+          document.getElementById("resultContainer").classList.add("hidden");
+          document
+            .getElementById("rollingContainer")
+            .classList.remove("hidden");
+
+          startRollingAnimation(count);
+        } else {
+          // Stop Rolling
+          stopRolling();
+        }
+      }
+
+      function startRollingAnimation(count) {
+        const container = document.getElementById("rollingContainer");
+
+        rollTimer = setInterval(() => {
+          // Randomly pick 'count' names from candidates to show
+          const tempShow = [];
+          for (let i = 0; i < count; i++) {
+            const r = candidates[Math.floor(Math.random() * candidates.length)];
+            tempShow.push(r);
+          }
+
+          container.innerHTML = tempShow
+            .map(
+              (u) => `
+                <div class="w-32 h-32 md:w-40 md:h-40 bg-red-800 border-4 border-gold-500 rounded-full flex flex-col items-center justify-center shadow-lg transform scale-95">
+                   <div class="text-2xl md:text-3xl font-black text-gold-100">${u.name}</div>
+                   <div class="text-xs text-gold-500/80 mt-1">${u.group_name}</div>
+                   <div class="text-[10px] text-red-200/50 mt-1 font-mono">No.${u.lottery_number || "???"}</div>
+                </div>
+             `,
+            )
+            .join("");
+        }, 40); // Fast update
+      }
+
+      async function stopRolling() {
+        clearInterval(rollTimer);
+        const btn = document.getElementById("actionBtn");
+        btn.disabled = true;
+        btn.textContent = "正在揭晓...";
+
+        const count = parseInt(document.getElementById("drawCount").value);
+
+        try {
+          const res = await fetch(`${API_URL}/draw`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ level: currentLevel, count }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            alert(data.error);
+            location.reload();
+            return;
+          }
+
+          // Show Results
+          const winners = data.winners;
+          showResults(winners);
+
+          // Update local data
+          await fetchCandidates();
+          await fetchWinners();
+        } catch (e) {
+          alert("网络错误");
+        } finally {
+          isRolling = false;
+
+          // Disable button immediately after stopping to prevent double clicks or re-drawing
+          btn.disabled = true;
+          btn.textContent = "抽奖完成";
+          btn.classList.add("bg-gray-500", "cursor-not-allowed");
+          btn.classList.remove(
+            "from-gold-300",
+            "to-gold-600",
+            "hover:brightness-110",
+            "shadow-[0_0_20px_rgba(251,191,36,0.6)]",
+            "animate-pulse-slow",
+          );
+
+          // Optional: Re-enable after a delay or require page reload?
+          // Requirement says "每次抽奖只能点一次", implies locking this session or level.
+          // But if they need to draw next batch, maybe just lock for a few seconds?
+          // "每次抽奖只能点一次" likely means "don't let me click start again immediately".
+          // Let's lock it until they switch level or refresh, OR just lock it for 3 seconds.
+          // Given "每次抽奖只能点一次", usually means "One click per round".
+
+          // Let's lock for 5 seconds to show results safely
+          setTimeout(() => {
+            btn.disabled = false;
+            btn.textContent = "开始抽奖";
+            btn.classList.remove("bg-gray-500", "cursor-not-allowed");
+            btn.classList.add(
+              "from-gold-300",
+              "to-gold-600",
+              "hover:brightness-110",
+              "shadow-[0_0_20px_rgba(251,191,36,0.6)]",
+              "animate-pulse-slow",
+            );
+          }, 3000);
+        }
+      }
+
+      function showResults(winners) {
+        document.getElementById("rollingContainer").classList.add("hidden");
+        const container = document.getElementById("resultContainer");
+        const list = document.getElementById("resultList");
+        const title = document.getElementById("resultTitle");
+
+        container.classList.remove("hidden");
+        title.textContent = `🎉 恭喜获得 ${currentLevel} 🎉`;
+
+        list.innerHTML = "";
+        winners.forEach((w, idx) => {
+          const card = document.createElement("div");
+          card.className =
+            "pop-in w-28 h-36 md:w-32 md:h-40 bg-gradient-to-b from-red-600 to-red-800 border-2 border-gold-400 rounded-xl flex flex-col items-center justify-center shadow-2xl relative";
+          card.style.animationDelay = `${idx * 0.15}s`;
+
+          card.innerHTML = `
+                <div class="absolute -top-4 text-3xl">🎁</div>
+                <div class="text-xl md:text-2xl font-black text-white mb-1">${w.name}</div>
+                <div class="px-2 py-0.5 bg-black/20 rounded-full text-gold-300 text-[10px] font-bold">${w.group_name}</div>
+                <div class="mt-1 text-[10px] text-red-200 font-mono">No.${w.lottery_number || "???"}</div>
+             `;
+          list.appendChild(card);
+        });
+
+        // Confetti
+        const duration = 5000;
+        const end = Date.now() + duration;
+
+        (function frame() {
+          confetti({
+            particleCount: 5,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 },
+            colors: ["#fbbf24", "#dc2626"],
+          });
+          confetti({
+            particleCount: 5,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 },
+            colors: ["#fbbf24", "#dc2626"],
+          });
+          if (Date.now() < end) {
+            requestAnimationFrame(frame);
+          }
+        })();
+      }
+    </script>
+  </body>
+</html>
