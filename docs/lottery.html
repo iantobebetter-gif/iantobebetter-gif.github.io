@@ -431,21 +431,43 @@
         });
       });
 
+      // Mock Data
+      const MOCK_CANDIDATES = [
+        {name: "鲁栋栋", group_name: "二团"}, {name: "吴斐斐", group_name: "二团"}, 
+        {name: "宋柯佳", group_name: "二团"}, {name: "周华康", group_name: "二团"},
+        {name: "潘琰", group_name: "四团"}, {name: "孔祥福", group_name: "四团"},
+        {name: "李杰", group_name: "五团"}, {name: "罗进珮", group_name: "五团"},
+        {name: "叶剑", group_name: "特邀嘉宾"}, {name: "郭凡玉", group_name: "特邀嘉宾"}
+      ];
+
       async function fetchCandidates() {
         try {
           const res = await fetch(`${API_URL}/candidates`);
+          if(!res.ok) throw new Error("API Error");
           candidates = await res.json();
           document.getElementById("poolCount").textContent =
             `当前奖池人数：${candidates.length} 人`;
         } catch (e) {
-          console.error(e);
+          console.error("Using mock candidates:", e);
+          candidates = MOCK_CANDIDATES;
+          document.getElementById("poolCount").textContent =
+            `当前奖池人数：${candidates.length} 人 (演示)`;
         }
       }
 
       async function fetchWinners() {
         try {
           const res = await fetch(`${API_URL}/winners`);
+          if(!res.ok) throw new Error("API Error");
           const winners = await res.json();
+          updateTicker(winners);
+        } catch (e) {
+          console.error("Using mock winners:", e);
+          updateTicker([]);
+        }
+      }
+
+      function updateTicker(winners) {
           const ticker = document.getElementById("ticker");
           if (winners.length > 0) {
             ticker.textContent = winners
@@ -455,9 +477,6 @@
           } else {
             ticker.textContent = "暂无中奖信息，大奖虚位以待！";
           }
-        } catch (e) {
-          console.error(e);
-        }
       }
 
       async function resetLottery() {

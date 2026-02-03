@@ -783,6 +783,20 @@
         });
       });
 
+      // Mock Data Fallback
+      const MOCK_ROSTER = {
+        leaders: [
+          { name: "王总", role: "leader" }, { name: "卢总", role: "leader" },
+          { name: "寿总", role: "leader" }, { name: "黄总", role: "leader" }
+        ],
+        groups: {
+          "二团": ["倪丹","鲁栋栋","吴斐斐","宋柯佳","周华康","张健","周楚明","李永富","厉阳","张伟","龙志文","栾明学","康怿涵","闫胜元"].map(n=>({name:n})),
+          "四团": ["潘琰","孔祥福","陈骏宇","傅承雄","何林飞","宋荣","李泽州","郑力玮","贺思","徐俊超","王宇涵","董银燕","许忆恩"].map(n=>({name:n})),
+          "五团": ["李杰","罗进珮","高燕煦","金戈愉","许楷文","刘景力","汪新涛","李乐天","马奕骏"].map(n=>({name:n})),
+          "特邀嘉宾": ["叶剑","郭凡玉","孔冷","陈峰"].map(n=>({name:n}))
+        }
+      };
+
       async function refreshData() {
         try {
           const res = await fetch(`${API_URL}/init`);
@@ -797,9 +811,19 @@
           updateStats();
           checkLocalLogin(); // Check cache after loading data
         } catch (err) {
-          console.error(err);
-          // Fallback or Alert?
-          // alert("无法连接后台系统，请确保 node server.js 已运行");
+          console.error("Using fallback data due to API error:", err);
+          // Fallback logic
+          state.config = { table_count: 4, seats_per_table: 11 };
+          // Generate mock tables
+          state.tables = Array.from({length: 4}, (_, i) => ({
+             id: i + 1,
+             seats: Array.from({length: 11}, () => ({ used: false, name: "", role: "employee" }))
+          }));
+          state.stats = { total: 44, signedIn: 0, remaining: 44 };
+          
+          renderLayout();
+          updateStats();
+          alert("无法连接后台，已切换至离线演示模式");
         }
       }
 
@@ -891,9 +915,10 @@
           if (!res.ok) throw new Error("Failed to fetch roster");
           rosterData = await res.json();
           renderRoster();
-          // updateSuggestions(); // Removed initial call, now driven by input event
         } catch (err) {
-          console.error(err);
+          console.error("Using fallback roster:", err);
+          rosterData = MOCK_ROSTER;
+          renderRoster();
         }
       }
 
