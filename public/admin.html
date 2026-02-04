@@ -36,7 +36,7 @@
     </div>
 
     <!-- Admin Panel (Hidden by default) -->
-    <div id="admin-panel" class="hidden bg-white p-8 rounded-xl shadow-xl max-w-md w-full">
+    <div id="admin-panel" class="hidden bg-white p-8 rounded-xl shadow-xl max-w-4xl w-full">
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">
           系统管理后台
@@ -45,6 +45,37 @@
       </div>
       
       <div class="space-y-4">
+        <!-- Data Table Section -->
+        <div class="bg-white p-4 rounded-lg shadow border border-gray-200 overflow-hidden">
+           <div class="flex justify-between items-center mb-4">
+             <h2 class="font-bold text-gray-800">📋 人员信息列表</h2>
+             <button onclick="fetchUsers()" class="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-gray-600 transition-colors">
+               刷新
+             </button>
+           </div>
+           
+           <div class="overflow-x-auto max-h-[400px]">
+             <table class="w-full text-sm text-left text-gray-500">
+               <thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                 <tr>
+                   <th class="px-3 py-2">姓名</th>
+                   <th class="px-3 py-2">组别</th>
+                   <th class="px-3 py-2">签到</th>
+                   <th class="px-3 py-2">桌号</th>
+                   <th class="px-3 py-2">座位</th>
+                   <th class="px-3 py-2">抽奖号</th>
+                   <th class="px-3 py-2">祝福语</th>
+                   <th class="px-3 py-2">奖项</th>
+                 </tr>
+               </thead>
+               <tbody id="user-table-body">
+                  <!-- JS Render -->
+               </tbody>
+             </table>
+           </div>
+           <div class="mt-2 text-xs text-gray-400 text-right" id="table-stats"></div>
+        </div>
+
         <!-- 签到与座位重置 -->
         <div class="bg-orange-50 border border-orange-200 p-4 rounded-lg">
           <h2 class="font-bold text-orange-800 mb-2">签到与座位管理</h2>
@@ -75,6 +106,25 @@
           </button>
         </div>
 
+        <!-- 手动修改数据 -->
+        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+          <h2 class="font-bold text-blue-800 mb-2">手动修改数据</h2>
+          <p class="text-sm text-blue-600 mb-4">
+            强制修改指定人员的桌号和抽奖号（用于异常修复）。
+          </p>
+          <form onsubmit="handleManualUpdate(event)" class="space-y-3">
+             <input type="text" id="edit-name" class="w-full px-3 py-2 border rounded" placeholder="姓名 (必填)" required>
+             <div class="flex gap-2">
+               <input type="number" id="edit-table" class="w-1/3 px-3 py-2 border rounded" placeholder="桌号">
+               <input type="number" id="edit-seat" class="w-1/3 px-3 py-2 border rounded" placeholder="座位号">
+               <input type="text" id="edit-lottery" class="w-1/3 px-3 py-2 border rounded" placeholder="抽奖号">
+             </div>
+             <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors">
+               提交修改
+             </button>
+          </form>
+        </div>
+
         <div class="border-t pt-4">
           <a href="/" class="block text-center text-blue-600 hover:underline">返回首页</a>
         </div>
@@ -85,11 +135,9 @@
       const API_URL = "/api";
 
       // Check login status on load
-      document.addEventListener("DOMContentLoaded", () => {
-        if (sessionStorage.getItem("admin_auth") === "true") {
-          showPanel();
-        }
-      });
+      if (sessionStorage.getItem("admin_auth") === "true") {
+        showPanel();
+      }
 
       function handleLogin(e) {
         e.preventDefault();
@@ -107,6 +155,54 @@
       function showPanel() {
         document.getElementById("login-card").classList.add("hidden");
         document.getElementById("admin-panel").classList.remove("hidden");
+        // Load data when panel shows
+        fetchUsers();
+      }
+
+      async function fetchUsers() {
+        try {
+           const res = await fetch(`${API_URL}/admin/users`);
+           const users = await res.json();
+           renderTable(users);
+        } catch(e) {
+           console.error("Fetch users failed", e);
+        }
+      }
+
+      function renderTable(users) {
+         const tbody = document.getElementById("user-table-body");
+         tbody.innerHTML = "";
+         
+         users.forEach(u => {
+            const tr = document.createElement("tr");
+            tr.className = "bg-white border-b hover:bg-gray-50";
+            
+            // Status Badge
+            const statusHtml = u.is_signed_in 
+               ? `<span class="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded">已签</span>` 
+               : `<span class="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-0.5 rounded">未签</span>`;
+            
+            // Prize Badge
+            const prizeHtml = u.prize_level 
+               ? `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded">${u.prize_level}</span>` 
+               : `<span class="text-gray-300">-</span>`;
+
+            tr.innerHTML = `
+              <td class="px-3 py-2 font-medium text-gray-900 whitespace-nowrap">${u.name}</td>
+              <td class="px-3 py-2">${u.group_name}</td>
+              <td class="px-3 py-2">${statusHtml}</td>
+              <td class="px-3 py-2">${u.table_number || '-'}</td>
+              <td class="px-3 py-2">${u.seat_number || '-'}</td>
+              <td class="px-3 py-2 font-mono text-xs">${u.lottery_number || '-'}</td>
+              <td class="px-3 py-2 text-xs truncate max-w-[100px]" title="${u.seat_label || ''}">${u.seat_label || '-'}</td>
+              <td class="px-3 py-2">${prizeHtml}</td>
+            `;
+            tbody.appendChild(tr);
+         });
+         
+         // Stats
+         const signedCount = users.filter(u => u.is_signed_in).length;
+         document.getElementById("table-stats").textContent = `共 ${users.length} 人，已签到 ${signedCount} 人`;
       }
 
       function logout() {
@@ -119,8 +215,49 @@
       }
 
       async function resetLottery() {
+        if (!confirm("确定要清空【抽奖结果】吗？\n\n所有中奖名单将被移除，可以重新开始抽奖。")) {
+          return;
+        }
         await performReset('/reset/lottery', 'btn-lottery', '抽奖数据已重置');
       }
+
+      async function handleManualUpdate(e) {
+         e.preventDefault();
+         const name = document.getElementById("edit-name").value.trim();
+         const table = document.getElementById("edit-table").value.trim();
+         const seat = document.getElementById("edit-seat").value.trim();
+         const lottery = document.getElementById("edit-lottery").value.trim();
+ 
+         if (!name) return;
+         if (!confirm(`确定要修改 [${name}] 的信息吗？`)) return;
+ 
+         try {
+            const res = await fetch(`${API_URL}/admin/update_user`, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({
+                  name,
+                  table_number: table,
+                  seat_number: seat,
+                  lottery_number: lottery
+               })
+            });
+            const data = await res.json();
+            if(res.ok) {
+               alert(data.message);
+               // Clear form
+               document.getElementById("edit-name").value = "";
+               document.getElementById("edit-table").value = "";
+               document.getElementById("edit-seat").value = "";
+               document.getElementById("edit-lottery").value = "";
+            } else {
+               alert(data.error || "修改失败");
+            }
+         } catch(err) {
+            console.error(err);
+            alert("网络错误");
+         }
+       }
 
       async function performReset(endpoint, btnId, successMsg) {
         const btn = document.getElementById(btnId);

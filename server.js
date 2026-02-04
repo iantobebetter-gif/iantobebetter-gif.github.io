@@ -354,6 +354,94 @@ app.post('/api/reset/lottery', async (req, res) => {
   }
 });
 
+// 7. Manual Update User Info
+app.post('/api/admin/update_user', async (req, res) => {
+  const { name, table_number, seat_number, lottery_number } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name required' });
+
+  try {
+    // Check if user exists
+    const [rows] = await pool.query('SELECT * FROM users WHERE name = ?', [name]);
+    if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    
+    // Update fields if provided
+    let updateFields = [];
+    let params = [];
+
+    if (table_number !== undefined && table_number !== '') {
+       updateFields.push('table_number = ?');
+       params.push(table_number);
+    }
+
+    if (seat_number !== undefined && seat_number !== '') {
+       updateFields.push('seat_number = ?');
+       params.push(seat_number);
+    }
+
+    if (lottery_number !== undefined && lottery_number !== '') {
+       updateFields.push('lottery_number = ?');
+       params.push(lottery_number);
+    }
+    
+    if (updateFields.length > 0) {
+       // Force sign in if manually setting data
+       updateFields.push('is_signed_in = TRUE');
+       
+       // Auto-generate seat_label if not provided
+       const fourBless = [
+          "马到成功", "龙马精神", "一马当先", "万马奔腾", "马上发财", "马上有钱", "马运亨通", "马势如虹",
+          "骏马奔腾", "天马行空", "事业腾飞", "步步高升", "金玉满堂", "财源广进", "喜气洋洋", "鸿运当头",
+          "吉星高照", "鹏程万里", "大展宏图", "诸事顺利", "心想事成", "一帆风顺", "蒸蒸日上", "锦上添花",
+          "福星高照", "恭喜发财", "阖家幸福", "顺心如意", "春风得意", "祥瑞满堂", "紫气东来", "六六大顺",
+          "八方来财", "招财进宝", "日进斗金", "腰缠万贯", "富贵吉祥", "开工大吉", "大吉大利", "万事如意",
+          "岁岁平安", "五福临门", "三阳开泰", "喜从天降", "好运连连", "笑口常开", "福寿安康", "平平安安",
+          "团团圆圆", "幸福美满", "福禄双全", "财运亨通", "飞黄腾达", "前程似锦", "功成名就", "一鸣惊人",
+          "才高八斗", "学富五车", "聪明伶俐", "机智过人"
+        ];
+       const label = fourBless[Math.floor(Math.random() * fourBless.length)];
+       updateFields.push('seat_label = ?');
+       params.push(label);
+
+       const sql = `UPDATE users SET ${updateFields.join(', ')} WHERE name = ?`;
+       params.push(name);
+       
+       await pool.query(sql, params);
+       
+       // Auto-assign seat only if table is set but seat is NOT provided and NOT already set
+       if (table_number && !seat_number && (!rows[0].seat_number)) {
+          // Find an empty seat in that table
+          const [tableUsers] = await pool.query('SELECT seat_number FROM users WHERE table_number = ? AND seat_number IS NOT NULL', [table_number]);
+          const usedSeats = new Set(tableUsers.map(u => u.seat_number));
+          
+          // Assuming max 12 seats just to be safe
+          let newSeat = 1;
+          while (usedSeats.has(newSeat)) {
+             newSeat++;
+          }
+          // Update seat_number
+          await pool.query('UPDATE users SET seat_number = ? WHERE name = ?', [newSeat, name]);
+       }
+
+       res.json({ ok: true, message: `User ${name} updated` });
+    } else {
+       res.json({ ok: true, message: 'No changes made' });
+    }
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 8. Get All Users Info (Admin)
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT name, group_name, role, is_signed_in, table_number, seat_number, lottery_number, seat_label, prize_level FROM users ORDER BY is_signed_in DESC, table_number ASC, seat_number ASC');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ------------------------------------------------------------
 // Export API
 // ------------------------------------------------------------
