@@ -769,14 +769,14 @@
       // Mock Data Fallback
       const MOCK_ROSTER = {
         leaders: [
-          { name: "王总", role: "leader" }, { name: "卢总", role: "leader" },
-          { name: "寿总", role: "leader" }, { name: "黄总", role: "leader" }
+          { name: "王学军", role: "leader" }, { name: "卢昭泉", role: "leader" },
+          { name: "寿砚耕", role: "leader" }, { name: "黄卓慧", role: "leader" }
         ],
         groups: {
+          "特邀嘉宾": ["孔冷","陈峰","叶剑","郭凡玉"].map(n=>({name:n})),
           "二团": ["倪丹","鲁栋栋","吴斐斐","宋柯佳","周华康","张健","周楚明","李永富","厉阳","张伟","龙志文","栾明学","康怿涵","闫胜元"].map(n=>({name:n})),
           "四团": ["潘琰","孔祥福","陈骏宇","傅承雄","何林飞","宋荣","李泽州","郑力玮","贺思","徐俊超","王宇涵","董银燕","许忆恩"].map(n=>({name:n})),
           "五团": ["李杰","罗进珮","高燕煦","金戈愉","许楷文","刘景力","汪新涛","李乐天","马奕骏"].map(n=>({name:n})),
-          "特邀嘉宾": ["叶剑","郭凡玉","孔冷","陈峰"].map(n=>({name:n}))
         }
       };
 
@@ -830,7 +830,7 @@
                         const freshInfo = {
                            ...myInfo,
                            tableId: t.id,
-                           seatId: s.role === 'leader' && s.name === '王总' ? 1 : (s.seatIndex || myInfo.seatId), // Simplified match
+                           seatId: s.role === 'leader' && s.name === '王学军' ? 1 : (s.seatIndex || myInfo.seatId), // Simplified match
                            // Actually we can just reconstruct from seat 's'
                            // But 's' doesn't have tableId directly, 't' has it.
                            // Let's just trust the name match for now and keep using cached or simple update.
@@ -1053,23 +1053,48 @@
 
         // Leaders
         if (shouldShow("leader") && rosterData.leaders && rosterData.leaders.length > 0) {
-          list.appendChild(createTreeItem("🦁 领导组", rosterData.leaders.length, rosterData.leaders));
+          // Client-side sort fallback (if backend didn't sort)
+          const leaderOrder = ["王学军", "卢伟", "寿晓华", "黄智"];
+          const sortedLeaders = [...rosterData.leaders].sort((a, b) => {
+             const idxA = leaderOrder.indexOf(a.name);
+             const idxB = leaderOrder.indexOf(b.name);
+             const valA = idxA === -1 ? 999 : idxA;
+             const valB = idxB === -1 ? 999 : idxB;
+             return valA - valB;
+          });
+          
+          list.appendChild(createTreeItem("🦁 总经理组", sortedLeaders.length, sortedLeaders));
         }
 
-        // Groups (Backend sends orderedKeys: "特邀嘉宾", "二团", "四团", "五团")
+        // Guests (Explicitly placed after Leaders)
+        if (rosterData.groups && rosterData.groups['特邀嘉宾']) {
+           const tabKey = "guest"; // or 'all'
+           if (shouldShow(tabKey)) {
+              const guestOrder = ["孔冷", "陈峰", "叶剑", "郭凡玉"];
+              const sortedGuests = [...rosterData.groups['特邀嘉宾']].sort((a, b) => {
+                 const idxA = guestOrder.indexOf(a.name);
+                 const idxB = guestOrder.indexOf(b.name);
+                 const valA = idxA === -1 ? 999 : idxA;
+                 const valB = idxB === -1 ? 999 : idxB;
+                 return valA - valB;
+              });
+              list.appendChild(createTreeItem("🎉 特邀嘉宾", sortedGuests.length, sortedGuests));
+           }
+        }
+
+        // Other Groups
         if (rosterData.groups) {
           Object.keys(rosterData.groups).forEach(gName => {
+             if (gName === '特邀嘉宾') return; // Handled above
+
              // Filter logic
              let tabKey = "all";
              if (gName.includes("二")) tabKey = "group2";
              else if (gName.includes("四")) tabKey = "group4";
              else if (gName.includes("五")) tabKey = "group5";
-             else if (gName.includes("特邀")) tabKey = "guest";
              
              if (shouldShow(tabKey)) {
-                let icon = "⭐️";
-                if (gName.includes("特邀")) icon = "🎉";
-                list.appendChild(createTreeItem(`${icon} ${gName}`, rosterData.groups[gName].length, rosterData.groups[gName]));
+                list.appendChild(createTreeItem(`⭐️ ${gName}`, rosterData.groups[gName].length, rosterData.groups[gName]));
              }
           });
         }

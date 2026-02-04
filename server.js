@@ -94,11 +94,25 @@ app.get('/api/roster', async (req, res) => {
   try {
     const [users] = await pool.query('SELECT name, group_name, role FROM users WHERE is_signed_in = FALSE ORDER BY group_name, name');
     
+    // Custom sort for Leaders
+    const leaderOrder = ["王学军", "卢昭泉", "寿砚耕", "黄卓慧"];
+    const leaders = users.filter(u => u.role === 'leader').sort((a, b) => {
+      const idxA = leaderOrder.indexOf(a.name);
+      const idxB = leaderOrder.indexOf(b.name);
+      // If not found in list, put at end
+      const valA = idxA === -1 ? 999 : idxA;
+      const valB = idxB === -1 ? 999 : idxB;
+      return valA - valB;
+    });
+
     // Build Tree
     const tree = {
-      leaders: users.filter(u => u.role === 'leader'),
+      leaders: leaders,
       groups: {}
     };
+
+    // Custom sort for Guests (孔、陈、叶、郭)
+    const guestOrder = ["孔冷", "陈峰", "叶剑", "郭凡玉"];
 
     users.filter(u => u.role === 'employee').forEach(u => {
       if (!tree.groups[u.group_name]) {
@@ -106,6 +120,17 @@ app.get('/api/roster', async (req, res) => {
       }
       tree.groups[u.group_name].push(u);
     });
+
+    // Sort guests if they exist
+    if (tree.groups['特邀嘉宾']) {
+      tree.groups['特邀嘉宾'].sort((a, b) => {
+        const idxA = guestOrder.indexOf(a.name);
+        const idxB = guestOrder.indexOf(b.name);
+        const valA = idxA === -1 ? 999 : idxA;
+        const valB = idxB === -1 ? 999 : idxB;
+        return valA - valB;
+      });
+    }
 
     res.json(tree);
   } catch (err) {
@@ -167,7 +192,7 @@ app.post('/api/signin', async (req, res) => {
       // Leader Rule: Must be Seat #1
       // Leader Rule: Wang Zong -> Table 1
       
-      if (user.name === '王总') {
+      if (user.name === '王学军') {
          const t1 = tables.find(t => t.id === 1);
          if (!t1) return res.status(500).json({ error: 'Table 1 not found' });
          if (t1.seats[0]) return res.status(400).json({ error: '一号桌主位已被占用' });
