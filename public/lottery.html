@@ -412,23 +412,6 @@
         await fetchCandidates();
         await fetchWinners();
         selectLevel("三等奖", 8); // Default 8 for 3rd prize
-
-        // Hidden Reset Logic
-        const title = document.getElementById("lotteryTitle");
-        let titleClicks = 0;
-        let titleTimer = null;
-
-        title.style.cursor = "pointer";
-        title.addEventListener("click", () => {
-          titleClicks++;
-          if (titleTimer) clearTimeout(titleTimer);
-          titleTimer = setTimeout(() => { titleClicks = 0; }, 1000);
-
-          if (titleClicks >= 5) {
-            titleClicks = 0;
-            resetLottery();
-          }
-        });
       });
 
       // Mock Data

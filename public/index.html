@@ -764,23 +764,6 @@
         
         await refreshData();
         await fetchRoster();
-
-        // Secret Backdoor: Click title 5 times in 2 seconds
-        document.getElementById("mainTitle").addEventListener("click", () => {
-          titleClickCount++;
-          if(titleClickTimer) clearTimeout(titleClickTimer);
-          
-          titleClickTimer = setTimeout(() => {
-            titleClickCount = 0;
-          }, 2000);
-
-          if(titleClickCount >= 5) {
-             titleClickCount = 0;
-             if(confirm("⚠️ 管理员模式：确定要清空所有数据并重置系统吗？")) {
-                fetch(`${API_URL}/reset`, { method: "POST" }).then(() => location.reload());
-             }
-          }
-        });
       });
 
       // Mock Data Fallback

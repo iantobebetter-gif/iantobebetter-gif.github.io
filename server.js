@@ -285,11 +285,44 @@ app.post('/api/signin', async (req, res) => {
   }
 });
 
-// 4. Reset
+// 4. Reset All (Default)
 app.post('/api/reset', async (req, res) => {
   try {
     // Reset everything: sign-in status, seat assignment, AND prizes
     await pool.query('UPDATE users SET is_signed_in = FALSE, table_number = NULL, seat_number = NULL, lottery_number = NULL, seat_label = NULL, prize_level = NULL');
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. Reset Sign-in Only
+app.post('/api/reset/signin', async (req, res) => {
+  try {
+    // Only reset sign-in and seat info. Keep prize_level? No, if sign-in is gone, they shouldn't have prizes usually.
+    // But request says "清空签到数据，座位分配".
+    // Usually a full reset is safer, but let's assume they want to re-do seating without clearing prize history? 
+    // Or maybe they want to clear sign-in/seating specifically.
+    // However, if we clear sign-in, they fall out of "candidates" for lottery anyway.
+    
+    // Let's implement exactly as asked: Clear sign-in, table, seat, lottery_number, seat_label.
+    // Note: If they have a prize, and we clear sign-in, they might still show up in winners list if we don't clear prize_level.
+    // But winners list query checks "prize_level IS NOT NULL". It doesn't enforce "is_signed_in".
+    // So this allows re-signing in people who already won?
+    // Let's just clear sign-in related fields.
+    
+    await pool.query('UPDATE users SET is_signed_in = FALSE, table_number = NULL, seat_number = NULL, lottery_number = NULL, seat_label = NULL');
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 6. Reset Lottery Only
+app.post('/api/reset/lottery', async (req, res) => {
+  try {
+    // Only clear prize_level
+    await pool.query('UPDATE users SET prize_level = NULL');
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
