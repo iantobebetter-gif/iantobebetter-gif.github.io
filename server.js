@@ -121,7 +121,13 @@ app.get('/api/roster', async (req, res) => {
       tree.groups[u.group_name].push(u);
     });
 
-    // Sort guests if they exist
+    // Reorder groups: Special Guests -> Group 2 -> Group 4 -> Group 5
+    // But object keys order is not guaranteed in JSON.
+    // Frontend should handle display order.
+    // But we can try to return an ordered structure if frontend iterates keys.
+    // Actually, tree.groups is an object.
+    
+    // Let's sort guests inside the group first
     if (tree.groups['特邀嘉宾']) {
       tree.groups['特邀嘉宾'].sort((a, b) => {
         const idxA = guestOrder.indexOf(a.name);
@@ -189,32 +195,96 @@ app.post('/api/signin', async (req, res) => {
     let targetSeatIndex = -1;
     
     if (user.role === 'leader') {
-      // Leader Rule: Must be Seat #1
-      // Leader Rule: Wang Zong -> Table 1
+      // Leader Rule:
+      // Wang, Lu, Shou, Huang MUST be separated into different tables.
+      // They should occupy Seat 1 of Table 1, 2, 3, 4 respectively (or randomly among available tables).
       
-      if (user.name === '王学军') {
-         const t1 = tables.find(t => t.id === 1);
-         if (!t1) return res.status(500).json({ error: 'Table 1 not found' });
-         if (t1.seats[0]) return res.status(400).json({ error: '一号桌主位已被占用' });
-         targetTableIndex = t1.index;
-         targetSeatIndex = 0;
-      } else {
-         // Other Leaders: Find any table where Seat #1 is empty
-         // and prefer tables with no leader yet
-         const availableTables = tables.filter(t => !t.seats[0] && t.id !== 1); // Exclude Table 1 for normal leaders (reserved for Wang)
+      const fixedLeaders = ["王学军", "卢昭泉", "寿砚耕", "黄卓慧"];
+      
+      if (fixedLeaders.includes(user.name)) {
+         // Check which tables already have a "fixed leader"
+         // We can check seat 1 of each table, assuming fixed leaders take seat 1.
+         // Or better, check the names in tables.
+         
+         const occupiedTableIds = new Set();
+         
+         // Helper to check if a table has one of the fixed leaders
+         tables.forEach(t => {
+            const seat1 = t.seats[0]; // Assume leaders take seat 1
+            if (seat1 && seat1.used && fixedLeaders.includes(seat1.name)) {
+               occupiedTableIds.add(t.id);
+            }
+         });
+
+         // Find tables that DON'T have a fixed leader yet
+         // (and where Seat 1 is empty, just to be safe, though logic implies it should be)
+         const availableTables = tables.filter(t => !occupiedTableIds.has(t.id) && !t.seats[0]);
          
          if (availableTables.length === 0) {
-            // Fallback: check if Table 1 is free (unlikely if reserved)
-            if (!tables[0].seats[0]) {
-               targetTableIndex = 0; 
+            return res.status(400).json({ error: '四大领导席位已满，无法分配互斥座位' });
+         }
+
+         // Special case: Wang prefers Table 1 if available?
+         // User didn't strictly say Wang must be Table 1, just "mutually exclusive".
+         // But usually Wang is Table 1. Let's try to assign Wang to Table 1 if available.
+         
+         if (user.name === '王学军') {
+            const t1 = availableTables.find(t => t.id === 1);
+            if (t1) {
+               targetTableIndex = t1.index;
                targetSeatIndex = 0;
             } else {
-               return res.status(400).json({ error: '没有空余的主位（1号座）可分配' });
+               // Table 1 taken or not available?
+               // If Table 1 is taken by another fixed leader, Wang cannot sit there.
+               // If Wang MUST be Table 1, we should have reserved it.
+               // Assuming logic: First come first serve, or Wang signs in first?
+               // Let's just pick random available for mutual exclusion.
+               const chosen = getRandomItem(availableTables);
+               targetTableIndex = chosen.index;
+               targetSeatIndex = 0;
             }
          } else {
-            const chosen = getRandomItem(availableTables);
-            targetTableIndex = chosen.index;
-            targetSeatIndex = 0;
+             // Other 3 leaders: Pick any available table from the remaining set
+             const chosen = getRandomItem(availableTables);
+             targetTableIndex = chosen.index;
+             targetSeatIndex = 0;
+         }
+      } else {
+         // Remaining 2 leaders (or others) -> Random tables
+         // They can sit at any table, preferably Seat 1 if empty?
+         // If all Seat 1s are taken by fixed leaders (4 tables, 4 fixed leaders),
+         // then these extra leaders must take other seats?
+         // Or maybe there are more than 4 tables? Config says table_count = 4.
+         // So 4 tables, 4 fixed leaders take all Seat 1s.
+         // Remaining leaders must take normal seats?
+         // User says "remaining 2 leaders can randomly distribute".
+         // Let's treat them as employees for seat allocation (random empty seat),
+         // BUT they are still leaders in role.
+         
+         // Try to find a random table with ANY empty seat (avoiding Seat 1 if we want to reserve it, 
+         // but if Seat 1 is taken by fixed leaders, we just find any empty).
+         
+         const candidates = tables.filter(t => t.total < config.seats_per_table);
+         if (candidates.length === 0) return res.status(400).json({ error: '座位已满' });
+         
+         const chosenTable = getRandomItem(candidates);
+         targetTableIndex = chosenTable.index;
+         
+         // Find first empty seat. 
+         // If Seat 1 is empty (e.g. fixed leader hasn't signed in yet), should they take it?
+         // Better NOT take Seat 1 to reserve it for fixed leaders.
+         // So search from index 1.
+         const t = tables[targetTableIndex];
+         targetSeatIndex = t.seats.findIndex((used, idx) => !used && idx > 0);
+         
+         if (targetSeatIndex === -1) {
+             // Only Seat 1 is left?
+             if (!t.seats[0]) {
+                 // Dangerous: Taking Seat 1 might block fixed leader.
+                 // But if we are full, maybe okay?
+                 // Let's block Seat 1 for safety unless explicit.
+                 return res.status(400).json({ error: '该桌仅剩主位（保留给特定领导），请重试或联系管理员' });
+             }
          }
       }
     } else {

@@ -246,7 +246,14 @@
         border-color: #fcd34d;
       }
 
-      /* 卷轴风格 */
+      /* Hide Scrollbar but keep functionality */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+      }
       .scroll-bg {
         background-color: #fff7ed;
         background-image: url('data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M1 1h2v2H1V1zm4 0h2v2H5V1zm4 0h2v2H9V1zm4 0h2v2h-2V1zm4 0h2v2h-2V1z" fill="%23fcd34d" fill-opacity="0.2" fill-rule="evenodd"/%3E%3C/svg%3E');
@@ -441,43 +448,50 @@
             <div
               class="bg-red-800/80 p-2 lg:p-4 text-center border-b-2 border-gold-500/30 flex justify-between items-center"
             >
-              <h3 class="text-lg lg:text-xl font-black text-gold-300">
+              <h3 class="text-base font-black text-gold-300 whitespace-nowrap mr-2">
                 📜 待签到名单
               </h3>
               <!-- 移动端分组 Tab -->
-              <div class="flex gap-1 lg:hidden text-xs">
+              <div class="flex gap-1 lg:hidden text-[12px] font-bold w-full justify-between items-center px-1">
                 <button
                   onclick="switchRosterTab('all')"
                   id="rtab-all"
-                  class="px-2 py-1 rounded bg-gold-500 text-red-900 font-bold"
+                  class="flex-1 py-1 rounded bg-gold-500 text-red-900 font-bold text-center px-0.5"
                 >
                   全部
                 </button>
                 <button
                   onclick="switchRosterTab('leader')"
                   id="rtab-leader"
-                  class="px-2 py-1 rounded bg-red-900/50 text-gold-400"
+                  class="flex-1 py-1 rounded bg-red-900/50 text-gold-400 text-center px-0.5"
                 >
                   领导
                 </button>
                 <button
+                  onclick="switchRosterTab('guest')"
+                  id="rtab-guest"
+                  class="flex-1 py-1 rounded bg-red-900/50 text-gold-400 text-center px-0.5"
+                >
+                  嘉宾
+                </button>
+                <button
                   onclick="switchRosterTab('group2')"
                   id="rtab-group2"
-                  class="px-2 py-1 rounded bg-red-900/50 text-gold-400"
+                  class="flex-1 py-1 rounded bg-red-900/50 text-gold-400 text-center px-0.5"
                 >
                   二团
                 </button>
                 <button
                   onclick="switchRosterTab('group4')"
                   id="rtab-group4"
-                  class="px-2 py-1 rounded bg-red-900/50 text-gold-400"
+                  class="flex-1 py-1 rounded bg-red-900/50 text-gold-400 text-center px-0.5"
                 >
                   四团
                 </button>
                 <button
                   onclick="switchRosterTab('group5')"
                   id="rtab-group5"
-                  class="px-2 py-1 rounded bg-red-900/50 text-gold-400"
+                  class="flex-1 py-1 rounded bg-red-900/50 text-gold-400 text-center px-0.5"
                 >
                   五团
                 </button>
@@ -1063,7 +1077,7 @@
              return valA - valB;
           });
           
-          list.appendChild(createTreeItem("🦁 总经理组", sortedLeaders.length, sortedLeaders));
+          list.appendChild(createTreeItem("🦁 领导组", sortedLeaders.length, sortedLeaders));
         }
 
         // Guests (Explicitly placed after Leaders)
@@ -1082,18 +1096,31 @@
            }
         }
 
-        // Other Groups
+        // Other Groups (Order: 二团 -> 四团 -> 五团)
+        const groupOrder = ["二团", "四团", "五团"];
+        
         if (rosterData.groups) {
-          Object.keys(rosterData.groups).forEach(gName => {
-             if (gName === '特邀嘉宾') return; // Handled above
+          // First, render ordered groups
+          groupOrder.forEach(gName => {
+             if (rosterData.groups[gName]) {
+                // Filter logic
+                let tabKey = "all";
+                if (gName.includes("二")) tabKey = "group2";
+                else if (gName.includes("四")) tabKey = "group4";
+                else if (gName.includes("五")) tabKey = "group5";
+                
+                if (shouldShow(tabKey)) {
+                   list.appendChild(createTreeItem(`⭐️ ${gName}`, rosterData.groups[gName].length, rosterData.groups[gName]));
+                }
+             }
+          });
 
-             // Filter logic
-             let tabKey = "all";
-             if (gName.includes("二")) tabKey = "group2";
-             else if (gName.includes("四")) tabKey = "group4";
-             else if (gName.includes("五")) tabKey = "group5";
-             
-             if (shouldShow(tabKey)) {
+          // Then render any other groups not in the order list (except guests)
+          Object.keys(rosterData.groups).forEach(gName => {
+             if (gName === '特邀嘉宾' || groupOrder.includes(gName)) return; 
+
+             // Filter logic (Generic fallback)
+             if (currentRosterTab === "all") {
                 list.appendChild(createTreeItem(`⭐️ ${gName}`, rosterData.groups[gName].length, rosterData.groups[gName]));
              }
           });
@@ -1213,10 +1240,10 @@
       // Keep UI helpers
       function switchRosterTab(tab) {
         currentRosterTab = tab;
-        ["all", "leader", "group2", "group4", "group5"].forEach((t) => {
+        ["all", "leader", "guest", "group2", "group4", "group5"].forEach((t) => {
           const btn = document.getElementById(`rtab-${t}`);
-          if (t === tab) btn.className = "px-2 py-1 rounded bg-gold-500 text-red-900 font-bold";
-          else btn.className = "px-2 py-1 rounded bg-red-900/50 text-gold-400";
+          if (t === tab) btn.className = "flex-1 py-1 rounded bg-gold-500 text-red-900 font-bold text-center px-0.5";
+          else btn.className = "flex-1 py-1 rounded bg-red-900/50 text-gold-400 text-center px-0.5";
         });
         renderRoster();
       }
